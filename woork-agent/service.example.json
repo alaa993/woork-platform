@@ -1,0 +1,11 @@
+{
+  "service_name": "Woork Agent Service",
+  "run_command": "woork-agent run --config C:\\ProgramData\\WoorkAgent\\config.json",
+  "working_directory": "C:\\Program Files\\WoorkAgent",
+  "log_directory": "C:\\ProgramData\\WoorkAgent\\logs",
+  "models_directory": "C:\\ProgramData\\WoorkAgent\\models",
+  "notes": [
+    "Use this as the basis for WinSW or NSSM service registration.",
+    "Bundle the woork-agent executable together with config.json and runtime dependencies."
+  ]
+}

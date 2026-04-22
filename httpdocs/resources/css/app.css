@@ -1,0 +1,162 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Browser compatibility fallbacks for older Chrome / Opera builds on Windows.
+   Tailwind 4 emits OKLCH color tokens, which some older browsers ignore. */
+:root {
+    --woork-emerald-50: #ecfdf5;
+    --woork-emerald-100: #d1fae5;
+    --woork-emerald-200: #a7f3d0;
+    --woork-emerald-300: #6ee7b7;
+    --woork-emerald-400: #34d399;
+    --woork-emerald-500: #10b981;
+    --woork-emerald-600: #059669;
+    --woork-emerald-700: #047857;
+    --woork-emerald-800: #065f46;
+    --woork-emerald-900: #064e3b;
+    --woork-emerald-950: #022c22;
+}
+
+.bg-emerald-50,
+.bg-emerald-50\/80 {
+    background-color: var(--woork-emerald-50) !important;
+}
+
+.bg-emerald-100 {
+    background-color: var(--woork-emerald-100) !important;
+}
+
+.bg-emerald-500,
+.bg-emerald-500\/10,
+.bg-emerald-500\/15 {
+    background-color: var(--woork-emerald-500) !important;
+}
+
+.bg-emerald-600,
+.woork-btn-primary {
+    background-color: var(--woork-emerald-600) !important;
+    color: #fff !important;
+}
+
+.bg-emerald-700 {
+    background-color: var(--woork-emerald-700) !important;
+}
+
+.text-emerald-300 {
+    color: var(--woork-emerald-300) !important;
+}
+
+.text-emerald-400 {
+    color: var(--woork-emerald-400) !important;
+}
+
+.text-emerald-500 {
+    color: var(--woork-emerald-500) !important;
+}
+
+.text-emerald-600,
+.woork-link-accent {
+    color: var(--woork-emerald-600) !important;
+}
+
+.text-emerald-700 {
+    color: var(--woork-emerald-700) !important;
+}
+
+.text-emerald-800 {
+    color: var(--woork-emerald-800) !important;
+}
+
+.border-emerald-200,
+.border-emerald-200\/70 {
+    border-color: var(--woork-emerald-200) !important;
+}
+
+.border-emerald-300,
+.border-emerald-300\/60,
+.border-emerald-300\/70 {
+    border-color: var(--woork-emerald-300) !important;
+}
+
+.border-emerald-500\/30,
+.border-emerald-500\/40 {
+    border-color: rgba(5, 150, 105, 0.4) !important;
+}
+
+.shadow-emerald-600\/30 {
+    --tw-shadow-color: rgba(5, 150, 105, 0.3) !important;
+}
+
+.from-emerald-50 {
+    --tw-gradient-from: var(--woork-emerald-50) var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgba(236, 253, 245, 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.from-emerald-600 {
+    --tw-gradient-from: var(--woork-emerald-600) var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgba(5, 150, 105, 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.to-emerald-500 {
+    --tw-gradient-to: var(--woork-emerald-500) var(--tw-gradient-to-position) !important;
+}
+
+.to-teal-50 {
+    --tw-gradient-to: #f0fdfa var(--tw-gradient-to-position) !important;
+}
+
+.hover\:bg-emerald-500:hover,
+.woork-btn-primary:hover {
+    background-color: var(--woork-emerald-500) !important;
+}
+
+.hover\:text-emerald-500:hover {
+    color: var(--woork-emerald-500) !important;
+}
+
+.hover\:text-emerald-600:hover {
+    color: var(--woork-emerald-600) !important;
+}
+
+.hover\:bg-slate-100:hover {
+    background-color: #f1f5f9 !important;
+}
+
+.dark .dark\:text-emerald-200,
+.dark .dark\:text-emerald-200\/80 {
+    color: #a7f3d0 !important;
+}
+
+.dark .dark\:text-emerald-300 {
+    color: #6ee7b7 !important;
+}
+
+.dark .dark\:text-emerald-400 {
+    color: #34d399 !important;
+}
+
+.dark .dark\:bg-emerald-900\/20,
+.dark .dark\:bg-emerald-900\/30 {
+    background-color: rgba(6, 78, 59, 0.3) !important;
+}
+
+.dark .dark\:bg-emerald-950\/10,
+.dark .dark\:bg-emerald-950\/20 {
+    background-color: rgba(2, 44, 34, 0.2) !important;
+}
+
+.dark .dark\:border-emerald-900\/30,
+.dark .dark\:border-emerald-900\/40 {
+    border-color: rgba(6, 78, 59, 0.4) !important;
+}

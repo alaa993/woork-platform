@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "channel": "stable",
+  "platform": "windows-x64",
+  "artifact_path": "storage/agent-releases/1.0.0-woork-agent-windows-x64.zip",
+  "notes": "Windows service support\nCamera diagnostics\nRuntime event generation",
+  "published_at": "2026-04-17T12:00:00Z"
+}

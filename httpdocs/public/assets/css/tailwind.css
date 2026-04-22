@@ -1,0 +1,1 @@
+/* Tailwind placeholder (compile in app). Basic utility-like styles: */ .btn{padding:.6rem 1rem;border-radius:.6rem;transition:.2s;} .btn-primary{background:#1E3932;color:#fff;} .btn-primary:hover{filter:brightness(1.1);} .card{background:#fff;border-radius:1rem;padding:1rem;box-shadow:0 10px 25px rgba(0,0,0,.05);} .text-muted{color:#6b7280;} body{background:#FAF8F6;}

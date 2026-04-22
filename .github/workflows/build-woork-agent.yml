@@ -1,0 +1,66 @@
+name: Build Woork Agent Installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Agent version"
+        required: true
+        default: "1.0.0"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "woork-agent/**"
+      - ".github/workflows/build-woork-agent.yml"
+
+jobs:
+  build-windows-installer:
+    name: Build Windows installer
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        working-directory: woork-agent
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: woork-agent/pyproject.toml
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup --no-progress -y
+
+      - name: Download WinSW
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path deploy\winsw | Out-Null
+          Invoke-WebRequest `
+            -Uri "https://github.com/winsw/winsw/releases/download/v2.12.0/WinSW-x64.exe" `
+            -OutFile "deploy\winsw\WinSW-x64.exe"
+          if (-not (Test-Path "deploy\winsw\WinSW-x64.exe")) {
+            throw "WinSW download failed."
+          }
+
+      - name: Build installer
+        shell: powershell
+        run: .\deploy\windows\build-installer.ps1
+
+      - name: Show release files
+        shell: powershell
+        run: Get-ChildItem -Recurse release | Format-Table FullName, Length
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WoorkAgentSetup-${{ github.event.inputs.version || '1.0.0' }}
+          path: woork-agent/release/WoorkAgentSetup-*.exe
+          if-no-files-found: error

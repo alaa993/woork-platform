@@ -1,0 +1,2 @@
+# Run Laravel scheduler every minute
+* * * * * /usr/bin/php /var/www/vhosts/<domain>/httpdocs/artisan schedule:run >> /var/www/vhosts/<domain>/logs/schedule.log 2>&1

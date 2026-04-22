@@ -1,0 +1,1 @@
+<!doctype html><html><head><meta charset='utf-8'><link rel='stylesheet' href='/assets/css/tailwind.css'><title>Cookies</title></head><body class='max-w-3xl mx-auto p-6'><h1 class='text-2xl font-bold mb-3'>Cookies</h1><p>We use minimal cookies for authentication and language.</p></body></html>

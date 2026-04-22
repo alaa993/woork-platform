@@ -1,0 +1,46 @@
+api_base_url: "http://localhost"
+results_token: "changeme-results-token"
+batch_seconds: 30
+
+detector:
+  enabled: false
+  model_path: "./models/yolov8n.onnx"
+  classes_path: "./models/coco.names"
+  person_class_names: ["person"]
+  phone_class_names: ["cell phone", "mobile phone"]
+  conf_threshold: 0.4
+  nms_threshold: 0.45
+  input_size: 640
+
+tracker:
+  type: "bytetrack" # bytetrack | deepsort | simple
+  track_thresh: 0.5
+  track_buffer: 30
+  match_thresh: 0.8
+  max_age: 30
+  n_init: 3
+  max_iou_distance: 0.7
+  iou_threshold: 0.3
+  max_missed: 15
+
+cameras:
+  - name: "Front Door"
+    rtsp_url: "rtsp://user:pass@192.168.1.10:554/stream1"
+    organization_id: 1
+    room_id: 1
+    fps: 2
+    motion:
+      min_motion_area: 6000
+      motion_ratio_threshold: 0.02
+      bg_history: 300
+      bg_var_threshold: 16
+      bg_detect_shadows: false
+      blur_ksize: 3
+      erode_iter: 1
+      dilate_iter: 2
+    employees:
+      - employee_id: 1
+        # المنطقة كنقاط نسبية من 0 إلى 1 (x, y). اتركها فارغة للتتبع الديناميكي.
+        zone: [[0.05, 0.05], [0.45, 0.05], [0.45, 0.95], [0.05, 0.95]]
+      - employee_id: 2
+        zone: [[0.55, 0.05], [0.95, 0.05], [0.95, 0.95], [0.55, 0.95]]

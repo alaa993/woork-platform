@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Woork SaaS v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Agent Ingest",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{results_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"organization_id\": 1, \"employee_id\": 1, \"room_id\": 1, \"events\": [{\"type\": \"work_active\", \"started_at\": \"2025-10-29T09:00:00Z\", \"ended_at\": \"2025-10-29T10:00:00Z\"}]}"
+        },
+        "url": {
+          "raw": "{{base}}/api/agent/ingest",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "agent",
+            "ingest"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Daily Reports",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base}}/api/reports/daily?date=2025-10-29",
+          "host": [
+            "{{base}}"
+          ],
+          "path": [
+            "api",
+            "reports",
+            "daily"
+          ],
+          "query": [
+            {
+              "key": "date",
+              "value": "2025-10-29"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "token",
+      "value": "<sanctum>"
+    },
+    {
+      "key": "results_token",
+      "value": "changeme-results-token"
+    }
+  ]
+}

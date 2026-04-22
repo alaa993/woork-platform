@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "woork-agent"
+version = "1.0.0"
+description = "Woork Edge Agent for local RTSP camera processing and cloud sync"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "opencv-python-headless>=4.10",
+]
+
+[project.scripts]
+woork-agent = "woork_agent.cli:main"
+woork-agent-control = "woork_agent.control_app:main"
+
+[tool.setuptools.packages.find]
+include = ["woork_agent*"]
