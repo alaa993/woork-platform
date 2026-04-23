@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import tempfile
 import time
@@ -178,17 +179,27 @@ def _can_create_dir(path: Path) -> bool:
 
 
 def _sqlite_writable(state_dir: Path) -> bool:
+    temp_path = None
     try:
         state_dir.mkdir(parents=True, exist_ok=True)
-        with tempfile.NamedTemporaryFile(dir=state_dir, suffix=".sqlite", delete=True) as handle:
-            conn = sqlite3.connect(handle.name)
-            conn.execute("CREATE TABLE smoke (id INTEGER PRIMARY KEY)")
-            conn.execute("INSERT INTO smoke DEFAULT VALUES")
-            conn.commit()
-            conn.close()
+        fd, raw_path = tempfile.mkstemp(dir=state_dir, suffix=".sqlite")
+        os.close(fd)
+        temp_path = Path(raw_path)
+
+        conn = sqlite3.connect(str(temp_path))
+        conn.execute("CREATE TABLE smoke (id INTEGER PRIMARY KEY)")
+        conn.execute("INSERT INTO smoke DEFAULT VALUES")
+        conn.commit()
+        conn.close()
         return True
     except Exception:  # noqa: BLE001
         return False
+    finally:
+        if temp_path and temp_path.exists():
+            try:
+                temp_path.unlink()
+            except Exception:  # noqa: BLE001
+                pass
 
 
 def _check(name: str, ok: bool, message: str, details: Optional[dict[str, Any]] = None) -> dict[str, Any]:
