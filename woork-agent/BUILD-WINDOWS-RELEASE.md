@@ -122,6 +122,9 @@ The script will:
 - Build `dist\WoorkAgentControl.exe`
 - Compile `release\WoorkAgentSetup-1.0.0.exe`
 
+The executables are built from wrapper entrypoints in the project root so the
+`woork_agent` package is imported correctly inside PyInstaller bundles.
+
 ## Upload To Woork Cloud
 
 Upload:

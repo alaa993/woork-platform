@@ -15,7 +15,7 @@ pyinstaller `
   --hidden-import cv2 `
   --hidden-import numpy `
   --collect-all woork_agent `
-  woork_agent/cli.py
+  agent_entry.py
 
 pyinstaller `
   --name WoorkAgentControl `
@@ -26,6 +26,6 @@ pyinstaller `
   --hidden-import cv2 `
   --hidden-import numpy `
   --collect-all woork_agent `
-  woork_agent/control_app.py
+  control_entry.py
 
 Write-Host "Build complete. Output available under dist/woork-agent.exe and dist/WoorkAgentControl.exe"

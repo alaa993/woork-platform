@@ -19,6 +19,6 @@ pyinstaller `
   --exclude-module tkinter `
   --exclude-module _tkinter `
   --collect-all woork_agent `
-  woork_agent/cli.py
+  agent_entry.py
 
 Write-Host "Legacy Windows 7 build complete. This build excludes Tkinter, OpenCV, and NumPy. Control UI is provided by deploy/windows/control-legacy.ps1."
