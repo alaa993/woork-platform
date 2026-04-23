@@ -4,9 +4,14 @@ import json
 import time
 import urllib.error
 import urllib.request
-from typing import Any
+from typing import Any, Optional
 
 from .models import AgentSettings, CameraConfig, RuntimeState
+
+try:
+    import cv2  # type: ignore
+except Exception:  # noqa: BLE001
+    cv2 = None
 
 
 class CloudClient:
@@ -14,6 +19,7 @@ class CloudClient:
         self.settings = settings
 
     def register(self, pairing_token: str) -> dict[str, Any]:
+        vision_available = cv2 is not None
         payload = {
             "pairing_token": pairing_token,
             "device_uuid": self.settings.device_uuid,
@@ -21,13 +27,13 @@ class CloudClient:
             "version": self.settings.version,
             "os": self.settings.os,
             "capabilities": {
-                "rtsp": True,
+                "rtsp": vision_available,
                 "offline_queue": True,
                 "multi_camera": True,
-                "analyzers": ["interval", "motion_presence", "vision_people"],
-                "detectors": ["hog", "opencv_dnn"],
-                "person_detection": True,
-                "simple_tracking": True,
+                "analyzers": ["interval", "motion_presence", "vision_people"] if vision_available else ["interval"],
+                "detectors": ["hog", "opencv_dnn"] if vision_available else [],
+                "person_detection": vision_available,
+                "simple_tracking": vision_available,
                 "phone_detection": False,
             },
         }
@@ -41,7 +47,7 @@ class CloudClient:
         self,
         token: str,
         runtime_state: RuntimeState,
-        stream_statuses: list[dict[str, Any]] | None = None,
+        stream_statuses: Optional[list[dict[str, Any]]] = None,
     ) -> dict[str, Any]:
         payload = {
             "status": "online",
@@ -65,11 +71,11 @@ class CloudClient:
         self,
         method: str,
         path: str,
-        payload: dict[str, Any] | None = None,
-        token: str | None = None,
+        payload: Optional[dict[str, Any]] = None,
+        token: Optional[str] = None,
     ) -> dict[str, Any]:
         body = None if payload is None else json.dumps(payload).encode()
-        last_error: Exception | None = None
+        last_error: Optional[Exception] = None
 
         for attempt in range(1, self.settings.request_retries + 1):
             request = urllib.request.Request(

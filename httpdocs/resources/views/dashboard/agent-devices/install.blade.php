@@ -27,10 +27,10 @@
       Recommended system: Windows 10/11 64-bit. A limited Windows 7 legacy installer is available only when explicitly provided by support.
     </p>
     <div class="mt-4 flex flex-wrap gap-3">
-      <a href="{{ $downloadPath }}" class="woork-btn-primary rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm">{{ __('dashboard.agent_download') }}</a>
+      <a href="{{ $downloadPath }}" class="woork-btn-primary rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm">{{ __('dashboard.agent_download') }} Windows 10/11</a>
       @if(!empty($legacyDownloadPath))
         <a href="{{ $legacyDownloadPath }}" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-200">
-          Download Legacy Windows 7
+          Download Windows 7 Legacy
         </a>
       @endif
       <a href="{{ route('agent-releases.index') }}" class="rounded-xl border px-4 py-2 text-sm dark:border-white/10">{{ __('dashboard.agent_releases') }}</a>
@@ -46,16 +46,19 @@
       <ol class="mt-4 space-y-4 text-sm">
         <li class="rounded-xl border border-slate-200/70 dark:border-white/10 p-4">
           <div class="font-semibold">1. {{ __('dashboard.agent_step_download') }}</div>
-          <div class="mt-2 text-slate-500 dark:text-slate-400">Installer: <span class="font-mono">{{ $downloadPath }}</span></div>
+          <div class="mt-2 text-slate-500 dark:text-slate-400">Windows 10/11 installer: <span class="font-mono">{{ $downloadPath }}</span></div>
+          @if(!empty($legacyDownloadPath))
+            <div class="mt-2 text-amber-700 dark:text-amber-300">Windows 7 Legacy installer: <span class="font-mono">{{ $legacyDownloadPath }}</span></div>
+          @endif
           @if(!empty($release))
             <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">{{ __('dashboard.agent_release_latest') }} {{ $release->version }} · {{ $release->platform }}</div>
           @endif
         </li>
         <li class="rounded-xl border border-slate-200/70 dark:border-white/10 p-4">
           <div class="font-semibold">2. Install Woork Agent</div>
-          <div class="mt-2 text-slate-500 dark:text-slate-400">Run <span class="font-mono">WoorkAgentSetup.exe</span> on Windows 10/11 64-bit. It installs the control app and the background Windows service.</div>
+          <div class="mt-2 text-slate-500 dark:text-slate-400">Run <span class="font-mono">WoorkAgentSetup-1.0.0.exe</span> on Windows 10/11 64-bit. It installs the control app and the background Windows service.</div>
           @if(!empty($legacyDownloadPath))
-            <div class="mt-2 text-xs text-amber-700 dark:text-amber-300">For Windows 7 only, use the Legacy installer. It is a compatibility build and may have limited AI analysis performance.</div>
+            <div class="mt-2 text-xs text-amber-700 dark:text-amber-300">For Windows 7 only, use <span class="font-mono">WoorkAgentSetup-LegacyWin7-1.0.0.exe</span>. It is a compatibility build and may have limited AI analysis performance.</div>
           @endif
         </li>
         <li class="rounded-xl border border-slate-200/70 dark:border-white/10 p-4">

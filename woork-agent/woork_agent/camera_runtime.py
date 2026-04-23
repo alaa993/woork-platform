@@ -5,7 +5,7 @@ import threading
 import time
 from dataclasses import asdict
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 from .analyzers import build_analyzer
 from .models import AgentSettings, CameraConfig, CameraRuntimeStatus, EventPayload
@@ -30,7 +30,7 @@ class CameraWorker:
             health_message="Worker not started yet",
             observations={"reconnect_attempts": 0},
         )
-        self._thread: threading.Thread | None = None
+        self._thread: Optional[threading.Thread] = None
         self._running = False
         self._pending_events: list[EventPayload] = []
         self._capture: Any = None
@@ -240,7 +240,7 @@ class CameraWorker:
         config = self.camera.analysis_config or {}
         return max(1.0, float(config.get("overload_ratio", 1.5)))
 
-    def _run_analyzer(self, frame: Any, status: CameraRuntimeStatus | None = None) -> None:
+    def _run_analyzer(self, frame: Any, status: Optional[CameraRuntimeStatus] = None) -> None:
         result = self._analyzer.analyze(frame=frame, now_ts=time.time())
         if result.events:
             self._pending_events.extend(result.events)

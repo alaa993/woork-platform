@@ -20,7 +20,10 @@ WoorkAgentSetup-LegacyWin7-1.0.0.exe
 ```
 
 Use it only for legacy customer PCs. The recommended installer remains the
-Windows 10/11 version.
+Windows 10/11 version. Do not use `WoorkAgentSetup-1.0.0.exe` on Windows 7.
+The Legacy installer is a compatibility build: it can pair the device, sync
+configuration, send heartbeat, and run interval fallback analysis, but full
+OpenCV/AI camera analysis requires Windows 10/11.
 
 ## Install
 

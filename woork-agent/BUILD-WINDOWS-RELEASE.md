@@ -58,6 +58,10 @@ The downloaded artifact contains:
 WoorkAgentSetup-LegacyWin7-1.0.0.exe
 ```
 
+Do not use the main `WoorkAgentSetup-1.0.0.exe` artifact on Windows 7. That
+file is the Windows 10/11 production build and can fail on Windows 7 with
+missing API DLL or PyInstaller runtime errors.
+
 Upload it to:
 
 ```text

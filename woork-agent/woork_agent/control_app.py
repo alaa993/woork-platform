@@ -10,6 +10,7 @@ import uuid
 from pathlib import Path
 from tkinter import BOTH, END, LEFT, RIGHT, Button, Entry, Frame, Label, StringVar, Text, Tk, messagebox
 from tkinter.ttk import Notebook
+from typing import Optional
 
 from .diagnostics import run_doctor
 from .runtime import AgentRuntime, setup_file_logging
@@ -42,7 +43,7 @@ class WoorkControlApp:
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         self._ensure_config()
 
-        self.runtime_process: subprocess.Popen | None = None
+        self.runtime_process: Optional[subprocess.Popen] = None
 
         self.root = Tk()
         self.root.title("Woork Agent")
@@ -290,7 +291,7 @@ class WoorkControlApp:
     def _is_windows_service_installed(self) -> bool:
         return bool(self._windows_service_state())
 
-    def _windows_service_state(self) -> str | None:
+    def _windows_service_state(self) -> Optional[str]:
         if os.name != "nt":
             return None
 

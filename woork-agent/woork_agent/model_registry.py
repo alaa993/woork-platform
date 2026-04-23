@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 
 def load_model_manifest(models_dir: str) -> dict[str, Any]:
@@ -14,7 +14,7 @@ def load_model_manifest(models_dir: str) -> dict[str, Any]:
 
 
 def resolve_detector_bundle(
-    analysis_config: dict[str, Any] | None,
+    analysis_config: Optional[dict[str, Any]],
     models_dir: str,
 ) -> dict[str, Any]:
     config = dict(analysis_config or {})
@@ -65,7 +65,7 @@ def inspect_models(models_dir: str) -> list[dict[str, Any]]:
     return results
 
 
-def _exists(base_dir: Path, relative_path: str | None) -> bool | None:
+def _exists(base_dir: Path, relative_path: Optional[str]) -> Optional[bool]:
     if not relative_path:
         return None
     return (base_dir / relative_path).exists()

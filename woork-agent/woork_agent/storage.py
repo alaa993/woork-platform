@@ -4,7 +4,7 @@ import json
 import sqlite3
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from .models import CameraConfig, EventPayload, RuntimeState
 
@@ -96,11 +96,11 @@ class LocalStateStore:
         self.delete_queued_events(ids)
         return len(ids)
 
-    def _get(self, key: str) -> str | None:
+    def _get(self, key: str) -> Optional[str]:
         row = self.conn.execute("SELECT value FROM kv_store WHERE key = ?", (key,)).fetchone()
         return None if row is None else row["value"]
 
-    def _set(self, key: str, value: str | None) -> None:
+    def _set(self, key: str, value: Optional[str]) -> None:
         if value is None:
             self.conn.execute("DELETE FROM kv_store WHERE key = ?", (key,))
         else:

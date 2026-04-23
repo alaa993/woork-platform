@@ -5,7 +5,7 @@ import sqlite3
 import tempfile
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from .analyzers import build_analyzer
 from .model_registry import inspect_models
@@ -19,7 +19,7 @@ except Exception:  # noqa: BLE001
     np = None
 
 
-def run_doctor(settings: AgentSettings, state_path: str | None = None) -> dict[str, Any]:
+def run_doctor(settings: AgentSettings, state_path: Optional[str] = None) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     state_file = Path(state_path or settings.state_path)
 
@@ -191,7 +191,7 @@ def _sqlite_writable(state_dir: Path) -> bool:
         return False
 
 
-def _check(name: str, ok: bool, message: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
+def _check(name: str, ok: bool, message: str, details: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     payload = {
         "name": name,
         "ok": ok,

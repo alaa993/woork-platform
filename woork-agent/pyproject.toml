@@ -7,9 +7,9 @@ name = "woork-agent"
 version = "1.0.0"
 description = "Woork Edge Agent for local RTSP camera processing and cloud sync"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.8"
 dependencies = [
-  "opencv-python-headless>=4.10",
+  "opencv-python-headless>=4.10; python_version >= '3.9'",
 ]
 
 [project.scripts]

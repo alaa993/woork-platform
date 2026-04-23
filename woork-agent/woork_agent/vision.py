@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 try:
     import cv2  # type: ignore
@@ -18,7 +18,7 @@ class BoundingBox:
     w: int
     h: int
     label: str = "person"
-    confidence: float | None = None
+    confidence: Optional[float] = None
 
     @property
     def centroid(self) -> tuple[int, int]:
@@ -45,7 +45,7 @@ class Track:
     missing_frames: int
 
 
-def point_in_polygon(point: tuple[int, int], polygon: list[list[int]] | list[tuple[int, int]]) -> bool:
+def point_in_polygon(point: tuple[int, int], polygon: Any) -> bool:
     x, y = point
     inside = False
     points = [(int(px), int(py)) for px, py in polygon]
@@ -85,12 +85,12 @@ class DetectionBackend:
     def supports_label(self, label: str) -> bool:
         return False
 
-    def detect(self, frame: Any, labels: list[str] | None = None) -> list[BoundingBox]:
+    def detect(self, frame: Any, labels: Optional[list[str]] = None) -> list[BoundingBox]:
         return []
 
 
 class HOGPersonDetector(DetectionBackend):
-    def __init__(self, config: dict[str, Any] | None = None) -> None:
+    def __init__(self, config: Optional[dict[str, Any]] = None) -> None:
         self.config = config or {}
         self._hog = None
         if cv2 is not None:
@@ -103,7 +103,7 @@ class HOGPersonDetector(DetectionBackend):
     def supports_label(self, label: str) -> bool:
         return label in {"person", "*"}
 
-    def detect(self, frame: Any, labels: list[str] | None = None) -> list[BoundingBox]:
+    def detect(self, frame: Any, labels: Optional[list[str]] = None) -> list[BoundingBox]:
         if self._hog is None or frame is None:
             return []
         if labels and "person" not in labels and "*" not in labels:
@@ -157,7 +157,7 @@ class HOGPersonDetector(DetectionBackend):
 
 
 class OpenCVDnnObjectDetector(DetectionBackend):
-    def __init__(self, config: dict[str, Any] | None = None) -> None:
+    def __init__(self, config: Optional[dict[str, Any]] = None) -> None:
         self.config = config or {}
         self._model = None
         self._labels = self._load_labels()
@@ -191,7 +191,7 @@ class OpenCVDnnObjectDetector(DetectionBackend):
         normalized = label.strip().lower()
         return normalized in self._labels.values() or normalized == "*"
 
-    def detect(self, frame: Any, labels: list[str] | None = None) -> list[BoundingBox]:
+    def detect(self, frame: Any, labels: Optional[list[str]] = None) -> list[BoundingBox]:
         if self._model is None or frame is None:
             return []
 
@@ -283,8 +283,8 @@ class CentroidTracker:
         self._prune()
         return list(self._tracks.values())
 
-    def _match_track(self, detection: BoundingBox, candidate_ids: set[int]) -> int | None:
-        best_track_id: int | None = None
+    def _match_track(self, detection: BoundingBox, candidate_ids: set[int]) -> Optional[int]:
+        best_track_id: Optional[int] = None
         best_distance = self.max_distance
         cx, cy = detection.centroid
 
@@ -322,7 +322,7 @@ class CentroidTracker:
         }
 
 
-def build_detection_backend(config: dict[str, Any] | None = None) -> DetectionBackend:
+def build_detection_backend(config: Optional[dict[str, Any]] = None) -> DetectionBackend:
     detector_name = str((config or {}).get("detector", "auto")).strip().lower()
     has_dnn_artifacts = any((config or {}).get(key) for key in ("dnn_model_path", "dnn_config_path", "dnn_labels_path"))
 

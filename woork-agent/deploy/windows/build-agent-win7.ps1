@@ -7,14 +7,15 @@ Set-Location $AgentRoot
 
 python -m pip install --upgrade pip
 python -m pip install -r requirements-win7.txt
-python -m pip install -e .
+python -m pip install -e . --no-deps
 
 pyinstaller `
   --name woork-agent `
   --onefile `
   --clean `
-  --hidden-import cv2 `
-  --hidden-import numpy `
+  --exclude-module multiprocessing `
+  --exclude-module cv2 `
+  --exclude-module numpy `
   --collect-all woork_agent `
   woork_agent/cli.py
 
@@ -24,9 +25,10 @@ pyinstaller `
   --windowed `
   --clean `
   --hidden-import tkinter `
-  --hidden-import cv2 `
-  --hidden-import numpy `
+  --exclude-module multiprocessing `
+  --exclude-module cv2 `
+  --exclude-module numpy `
   --collect-all woork_agent `
   woork_agent/control_app.py
 
-Write-Host "Legacy Windows 7 build complete. Output available under dist/woork-agent.exe and dist/WoorkAgentControl.exe"
+Write-Host "Legacy Windows 7 build complete. This build excludes OpenCV/NumPy and runs config, pairing, heartbeat, and interval fallback analysis only."

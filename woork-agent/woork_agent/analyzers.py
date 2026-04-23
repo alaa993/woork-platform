@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 from .models import CameraConfig, EventPayload
 from .vision import BoundingBox, CentroidTracker, bbox_iou, build_detection_backend, point_in_polygon
@@ -23,12 +23,12 @@ class BaseAnalyzer:
     def __init__(self, camera: CameraConfig) -> None:
         self.camera = camera
         self.config = camera.analysis_config or {}
-        self._last_emitted_state: str | None = None
+        self._last_emitted_state: Optional[str] = None
         self._last_emitted_at = 0.0
         self._last_seen_at = 0.0
 
     @property
-    def employee_id(self) -> int | None:
+    def employee_id(self) -> Optional[int]:
         value = self.config.get("assigned_employee_id")
         return int(value) if value else None
 
@@ -40,8 +40,8 @@ class BaseAnalyzer:
         state: str,
         event_type: str,
         now_ts: float,
-        meta: dict[str, Any] | None = None,
-    ) -> EventPayload | None:
+        meta: Optional[dict[str, Any]] = None,
+    ) -> Optional[EventPayload]:
         employee_id = self.employee_id
         if not employee_id or not self.camera.room_id:
             return None

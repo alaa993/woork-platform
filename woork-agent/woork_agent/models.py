@@ -1,23 +1,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 
 @dataclass
 class CameraConfig:
     id: int
     organization_id: int
-    room_id: int | None
+    room_id: Optional[int]
     name: str
     purpose: str
     analysis_mode: str
-    rtsp_url: str | None
-    roi: dict[str, Any] | None = None
-    analysis_config: dict[str, Any] | None = None
-    status: str | None = None
-    stream_status: str | None = None
-    health_message: str | None = None
+    rtsp_url: Optional[str]
+    roi: Optional[dict[str, Any]] = None
+    analysis_config: Optional[dict[str, Any]] = None
+    status: Optional[str] = None
+    stream_status: Optional[str] = None
+    health_message: Optional[str] = None
     is_enabled: bool = True
 
 
@@ -49,25 +49,25 @@ class EventPayload:
     type: str
     started_at: str
     ended_at: str
-    track_id: str | None = None
-    confidence: float | None = None
-    meta: dict[str, Any] | None = None
+    track_id: Optional[str] = None
+    confidence: Optional[float] = None
+    meta: Optional[dict[str, Any]] = None
 
 
 @dataclass
 class CameraRuntimeStatus:
     id: int
     stream_status: str
-    health_message: str | None = None
-    last_frame_at: str | None = None
-    fps: float | None = None
-    analyzer: str | None = None
-    observations: dict[str, Any] | None = None
+    health_message: Optional[str] = None
+    last_frame_at: Optional[str] = None
+    fps: Optional[float] = None
+    analyzer: Optional[str] = None
+    observations: Optional[dict[str, Any]] = None
 
 
 @dataclass
 class RuntimeState:
-    token: str | None = None
-    agent_device_id: int | None = None
-    organization_id: int | None = None
+    token: Optional[str] = None
+    agent_device_id: Optional[int] = None
+    organization_id: Optional[int] = None
     cameras: list[CameraConfig] = field(default_factory=list)
