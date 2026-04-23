@@ -72,6 +72,15 @@ class AgentReleasesController extends Controller
                 ->withErrors(['artifact' => __('dashboard.agent_release_artifact_required')]);
         }
 
+        if (! $artifact && $artifactPath) {
+            $publicArtifactPath = public_path($artifactPath);
+            if (file_exists($publicArtifactPath)) {
+                $artifactName = basename($artifactPath);
+                $checksum = hash_file('sha256', $publicArtifactPath);
+                $artifactSize = filesize($publicArtifactPath);
+            }
+        }
+
         AgentRelease::create([
             'version' => $data['version'],
             'channel' => $data['channel'],

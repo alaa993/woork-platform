@@ -116,6 +116,8 @@ class AgentDevicesController extends Controller
         $legacyInstallerPath = 'downloads/WoorkAgentSetup-LegacyWin7-1.0.0.exe';
         $hasInstaller = file_exists(public_path($installerPath));
         $hasLegacyInstaller = file_exists(public_path($legacyInstallerPath));
+        $installerSize = $hasInstaller ? filesize(public_path($installerPath)) : $release?->artifact_size;
+        $legacyInstallerSize = $hasLegacyInstaller ? filesize(public_path($legacyInstallerPath)) : null;
 
         $downloadPath = match (true) {
             $hasInstaller => asset($installerPath),
@@ -131,6 +133,8 @@ class AgentDevicesController extends Controller
             'onboarding' => app(OrganizationOnboardingService::class)->summary($this->organization()),
             'downloadPath' => $downloadPath,
             'legacyDownloadPath' => $legacyDownloadPath,
+            'installerSize' => $installerSize,
+            'legacyInstallerSize' => $legacyInstallerSize,
             'registerEndpoint' => url('/api/agent/register'),
             'configEndpoint' => url('/api/agent/config'),
             'heartbeatEndpoint' => url('/api/agent/heartbeat'),

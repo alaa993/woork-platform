@@ -26,6 +26,9 @@
     <p class="mt-2 max-w-3xl text-sm font-medium text-amber-700 dark:text-amber-300">
       Recommended system: Windows 10/11 64-bit. A limited Windows 7 legacy installer is available only when explicitly provided by support.
     </p>
+    <p class="mt-2 max-w-3xl text-xs text-slate-500 dark:text-slate-400">
+      During internal testing, Chrome may show "not commonly downloaded" because the installer is not code-signed yet. Production distribution requires a code-signing certificate.
+    </p>
     <div class="mt-4 flex flex-wrap gap-3">
       <a href="{{ $downloadPath }}" class="woork-btn-primary rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm">{{ __('dashboard.agent_download') }} Windows 10/11</a>
       @if(!empty($legacyDownloadPath))
@@ -46,9 +49,30 @@
       <ol class="mt-4 space-y-4 text-sm">
         <li class="rounded-xl border border-slate-200/70 dark:border-white/10 p-4">
           <div class="font-semibold">1. {{ __('dashboard.agent_step_download') }}</div>
-          <div class="mt-2 text-slate-500 dark:text-slate-400">Windows 10/11 installer: <span class="font-mono">{{ $downloadPath }}</span></div>
+          <div class="mt-2 text-slate-500 dark:text-slate-400">
+            Windows 10/11 installer:
+            <span class="font-mono">{{ $downloadPath }}</span>
+            @if(isset($installerSize))
+              <span class="{{ $installerSize > 0 ? 'text-slate-500 dark:text-slate-400' : 'text-red-600 dark:text-red-300' }}">
+                ({{ number_format($installerSize / 1024 / 1024, 2) }} MB)
+              </span>
+            @endif
+          </div>
           @if(!empty($legacyDownloadPath))
-            <div class="mt-2 text-amber-700 dark:text-amber-300">Windows 7 Legacy installer: <span class="font-mono">{{ $legacyDownloadPath }}</span></div>
+            <div class="mt-2 text-amber-700 dark:text-amber-300">
+              Windows 7 Legacy installer:
+              <span class="font-mono">{{ $legacyDownloadPath }}</span>
+              @if(isset($legacyInstallerSize))
+                <span class="{{ $legacyInstallerSize > 0 ? 'text-amber-700 dark:text-amber-300' : 'text-red-600 dark:text-red-300' }}">
+                  ({{ number_format($legacyInstallerSize / 1024 / 1024, 2) }} MB)
+                </span>
+              @endif
+            </div>
+          @endif
+          @if((isset($installerSize) && $installerSize <= 0) || (isset($legacyInstallerSize) && $legacyInstallerSize <= 0))
+            <div class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
+              Installer file size is zero. Re-upload the EXE to public/downloads before testing.
+            </div>
           @endif
           @if(!empty($release))
             <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">{{ __('dashboard.agent_release_latest') }} {{ $release->version }} · {{ $release->platform }}</div>
@@ -80,8 +104,8 @@
         @if(!empty($release))
           <div class="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
             <div>{{ __('dashboard.agent_release_version') }}: {{ $release->version }}</div>
-            @if($release->artifact_size)
-              <div>{{ __('dashboard.agent_release_size') }}: {{ number_format($release->artifact_size / 1024 / 1024, 2) }} MB</div>
+            @if(isset($installerSize))
+              <div>{{ __('dashboard.agent_release_size') }}: {{ number_format($installerSize / 1024 / 1024, 2) }} MB</div>
             @endif
             @if($release->checksum_sha256)
               <div class="font-mono break-all">sha256: {{ $release->checksum_sha256 }}</div>
