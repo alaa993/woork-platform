@@ -62,6 +62,9 @@ Do not use the main `WoorkAgentSetup-1.0.0.exe` artifact on Windows 7. That
 file is the Windows 10/11 production build and can fail on Windows 7 with
 missing API DLL or PyInstaller runtime errors.
 
+The Legacy installer does not include `WoorkAgentControl.exe`. It installs a
+PowerShell/Windows Forms control panel to avoid `_tkinter` failures on Windows 7.
+
 Upload it to:
 
 ```text

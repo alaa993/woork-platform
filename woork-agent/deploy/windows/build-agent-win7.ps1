@@ -16,19 +16,9 @@ pyinstaller `
   --exclude-module multiprocessing `
   --exclude-module cv2 `
   --exclude-module numpy `
+  --exclude-module tkinter `
+  --exclude-module _tkinter `
   --collect-all woork_agent `
   woork_agent/cli.py
 
-pyinstaller `
-  --name WoorkAgentControl `
-  --onefile `
-  --windowed `
-  --clean `
-  --hidden-import tkinter `
-  --exclude-module multiprocessing `
-  --exclude-module cv2 `
-  --exclude-module numpy `
-  --collect-all woork_agent `
-  woork_agent/control_app.py
-
-Write-Host "Legacy Windows 7 build complete. This build excludes OpenCV/NumPy and runs config, pairing, heartbeat, and interval fallback analysis only."
+Write-Host "Legacy Windows 7 build complete. This build excludes Tkinter, OpenCV, and NumPy. Control UI is provided by deploy/windows/control-legacy.ps1."

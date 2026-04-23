@@ -24,6 +24,8 @@ Windows 10/11 version. Do not use `WoorkAgentSetup-1.0.0.exe` on Windows 7.
 The Legacy installer is a compatibility build: it can pair the device, sync
 configuration, send heartbeat, and run interval fallback analysis, but full
 OpenCV/AI camera analysis requires Windows 10/11.
+The Legacy installer uses a PowerShell control panel instead of the Python
+Tkinter control app because Tkinter is unreliable on older Windows 7 systems.
 
 ## Install
 
