@@ -23,8 +23,16 @@
     <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
       Download the Windows installer, paste the pairing token into the Woork Agent app, then start the service from the app. No command line is required for subscribers.
     </p>
+    <p class="mt-2 max-w-3xl text-sm font-medium text-amber-700 dark:text-amber-300">
+      Recommended system: Windows 10/11 64-bit. A limited Windows 7 legacy installer is available only when explicitly provided by support.
+    </p>
     <div class="mt-4 flex flex-wrap gap-3">
       <a href="{{ $downloadPath }}" class="woork-btn-primary rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm">{{ __('dashboard.agent_download') }}</a>
+      @if(!empty($legacyDownloadPath))
+        <a href="{{ $legacyDownloadPath }}" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-200">
+          Download Legacy Windows 7
+        </a>
+      @endif
       <a href="{{ route('agent-releases.index') }}" class="rounded-xl border px-4 py-2 text-sm dark:border-white/10">{{ __('dashboard.agent_releases') }}</a>
       <a href="{{ route('agent-devices.validation', $agentDevice) }}" class="rounded-xl border px-4 py-2 text-sm dark:border-white/10">{{ __('dashboard.agent_validation_title') }}</a>
       <a href="{{ route('agent-devices.show', $agentDevice) }}" class="rounded-xl border px-4 py-2 text-sm dark:border-white/10">{{ __('dashboard.agent_open_install_guide') }}</a>
@@ -45,7 +53,10 @@
         </li>
         <li class="rounded-xl border border-slate-200/70 dark:border-white/10 p-4">
           <div class="font-semibold">2. Install Woork Agent</div>
-          <div class="mt-2 text-slate-500 dark:text-slate-400">Run <span class="font-mono">WoorkAgentSetup.exe</span>. It installs the control app and the background Windows service.</div>
+          <div class="mt-2 text-slate-500 dark:text-slate-400">Run <span class="font-mono">WoorkAgentSetup.exe</span> on Windows 10/11 64-bit. It installs the control app and the background Windows service.</div>
+          @if(!empty($legacyDownloadPath))
+            <div class="mt-2 text-xs text-amber-700 dark:text-amber-300">For Windows 7 only, use the Legacy installer. It is a compatibility build and may have limited AI analysis performance.</div>
+          @endif
         </li>
         <li class="rounded-xl border border-slate-200/70 dark:border-white/10 p-4">
           <div class="font-semibold">3. Pair this device</div>

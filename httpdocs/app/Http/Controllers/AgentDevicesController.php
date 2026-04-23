@@ -112,15 +112,25 @@ class AgentDevicesController extends Controller
             ->latest('published_at')
             ->first();
 
-        $defaultInstaller = file_exists(public_path('downloads/WoorkAgentSetup-1.0.0.exe'))
-            ? asset('downloads/WoorkAgentSetup-1.0.0.exe')
-            : asset('downloads/woork-agent-windows-x64.zip');
+        $installerPath = 'downloads/WoorkAgentSetup-1.0.0.exe';
+        $legacyInstallerPath = 'downloads/WoorkAgentSetup-LegacyWin7-1.0.0.exe';
+        $hasInstaller = file_exists(public_path($installerPath));
+        $hasLegacyInstaller = file_exists(public_path($legacyInstallerPath));
+
+        $downloadPath = match (true) {
+            $hasInstaller => asset($installerPath),
+            (bool) $release => asset($release->artifact_path),
+            default => asset('downloads/woork-agent-windows-x64.zip'),
+        };
+
+        $legacyDownloadPath = $hasLegacyInstaller ? asset($legacyInstallerPath) : null;
 
         return view('dashboard.agent-devices.install', [
             'agentDevice' => $agentDevice,
             'release' => $release,
             'onboarding' => app(OrganizationOnboardingService::class)->summary($this->organization()),
-            'downloadPath' => $release ? asset($release->artifact_path) : $defaultInstaller,
+            'downloadPath' => $downloadPath,
+            'legacyDownloadPath' => $legacyDownloadPath,
             'registerEndpoint' => url('/api/agent/register'),
             'configEndpoint' => url('/api/agent/config'),
             'heartbeatEndpoint' => url('/api/agent/heartbeat'),

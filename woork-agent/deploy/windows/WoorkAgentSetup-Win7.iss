@@ -1,23 +1,23 @@
-; Woork Agent installer script for Inno Setup.
-; Build on Windows after running deploy/windows/build-agent.ps1.
+; Woork Agent Legacy Windows 7 installer script.
+; Build on Windows with Python 3.8 and deploy/windows/build-agent-win7.ps1.
 
-#define MyAppName "Woork Agent"
+#define MyAppName "Woork Agent Legacy"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Woork"
 #define MyAppExeName "WoorkAgentControl.exe"
 
 [Setup]
-AppId={{8F9AE3EA-6E5E-41D8-A73A-8F7D31E01B4B}
+AppId={{615A9341-E6DE-4C6D-9B3C-FEC0A5B2B2F7}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\WoorkAgent
-DefaultGroupName=Woork Agent
+DefaultDirName={pf}\WoorkAgentLegacy
+DefaultGroupName=Woork Agent Legacy
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
-MinVersion=10.0
+MinVersion=6.1
 OutputDir=..\..\release
-OutputBaseFilename=WoorkAgentSetup-{#MyAppVersion}
+OutputBaseFilename=WoorkAgentSetup-LegacyWin7-{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -40,15 +40,15 @@ Source: "..\windows\install-service.ps1"; DestDir: "{app}\scripts"; Flags: ignor
 Source: "..\windows\uninstall-service.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\Woork Agent"; Filename: "{app}\WoorkAgentControl.exe"; Parameters: """{commonappdata}\WoorkAgent\config.json"""
-Name: "{commondesktop}\Woork Agent"; Filename: "{app}\WoorkAgentControl.exe"; Parameters: """{commonappdata}\WoorkAgent\config.json"""; Tasks: desktopicon
+Name: "{group}\Woork Agent Legacy"; Filename: "{app}\WoorkAgentControl.exe"; Parameters: """{commonappdata}\WoorkAgent\config.json"""
+Name: "{commondesktop}\Woork Agent Legacy"; Filename: "{app}\WoorkAgentControl.exe"; Parameters: """{commonappdata}\WoorkAgent\config.json"""; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"
 
 [Run]
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\scripts\install-service.ps1"""; Flags: runhidden
-Filename: "{app}\WoorkAgentControl.exe"; Parameters: """{commonappdata}\WoorkAgent\config.json"""; Description: "Open Woork Agent"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\WoorkAgentControl.exe"; Parameters: """{commonappdata}\WoorkAgent\config.json"""; Description: "Open Woork Agent Legacy"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File ""{app}\scripts\uninstall-service.ps1"""; Flags: runhidden

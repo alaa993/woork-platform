@@ -8,10 +8,19 @@ For the professional release, the user should receive `WoorkAgentSetup.exe`.
 
 ## Requirements
 
-- Windows 10 or newer for the recommended path.
+- Windows 10/11 64-bit.
 - Python 3.10 or newer.
 - Network access to the Woork cloud URL.
 - The PC must be on the same local network as the RTSP cameras.
+
+Windows 7 is supported only through the separate Legacy installer:
+
+```text
+WoorkAgentSetup-LegacyWin7-1.0.0.exe
+```
+
+Use it only for legacy customer PCs. The recommended installer remains the
+Windows 10/11 version.
 
 ## Install
 
