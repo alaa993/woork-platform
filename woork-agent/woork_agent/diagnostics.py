@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
 import tempfile
 import time
 from pathlib import Path
@@ -11,6 +10,11 @@ from typing import Any, Optional
 from .analyzers import build_analyzer
 from .model_registry import inspect_models
 from .models import AgentSettings, CameraConfig
+
+try:
+    import sqlite3
+except Exception:  # noqa: BLE001
+    sqlite3 = None
 
 try:
     import cv2  # type: ignore
@@ -50,8 +54,8 @@ def run_doctor(settings: AgentSettings, state_path: Optional[str] = None) -> dic
     checks.append(
         _check(
             "state_sqlite",
-            _sqlite_writable(state_dir),
-            f"SQLite temp check succeeded in {state_dir}",
+            _state_store_writable(state_dir),
+            _state_store_message(state_dir),
         )
     )
 
@@ -178,6 +182,20 @@ def _can_create_dir(path: Path) -> bool:
         return False
 
 
+def _state_store_writable(state_dir: Path) -> bool:
+    if sqlite3 is None:
+        return _json_state_writable(state_dir)
+    return _sqlite_writable(state_dir)
+
+
+def _state_store_message(state_dir: Path) -> str:
+    if sqlite3 is None:
+        return f"SQLite unavailable on this system; JSON fallback state store is writable in {state_dir}"
+    if _sqlite_writable(state_dir):
+        return f"SQLite state store is writable in {state_dir}"
+    return f"SQLite state store is not writable in {state_dir}"
+
+
 def _sqlite_writable(state_dir: Path) -> bool:
     temp_path = None
     try:
@@ -191,6 +209,25 @@ def _sqlite_writable(state_dir: Path) -> bool:
         conn.execute("INSERT INTO smoke DEFAULT VALUES")
         conn.commit()
         conn.close()
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+    finally:
+        if temp_path and temp_path.exists():
+            try:
+                temp_path.unlink()
+            except Exception:  # noqa: BLE001
+                pass
+
+
+def _json_state_writable(state_dir: Path) -> bool:
+    temp_path = None
+    try:
+        state_dir.mkdir(parents=True, exist_ok=True)
+        fd, raw_path = tempfile.mkstemp(dir=state_dir, suffix=".json")
+        os.close(fd)
+        temp_path = Path(raw_path)
+        temp_path.write_text('{"ok": true}', encoding="utf-8")
         return True
     except Exception:  # noqa: BLE001
         return False
