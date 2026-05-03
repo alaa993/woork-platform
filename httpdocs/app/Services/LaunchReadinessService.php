@@ -16,11 +16,7 @@ class LaunchReadinessService
         $onboarding = app(OrganizationOnboardingService::class)->summary($organization);
         $agentDevices = $organization->agentDevices;
         $cameras = $organization->cameras;
-        $publishedRelease = AgentRelease::published()
-            ->where('channel', 'stable')
-            ->where('platform', 'windows-x64')
-            ->latest('published_at')
-            ->first();
+        $publishedRelease = AgentRelease::publishedStableByPlatform();
 
         $onlineCameras = $cameras->where('stream_status', 'online')->count();
         $warningCameras = $cameras->where('stream_status', 'warning')->count();
@@ -46,9 +42,9 @@ class LaunchReadinessService
             [
                 'key' => 'release',
                 'label' => __('dashboard.readiness_release'),
-                'ok' => (bool) $publishedRelease,
+                'ok' => $publishedRelease->isNotEmpty(),
                 'detail' => $publishedRelease
-                    ? __('dashboard.readiness_release_ok', ['version' => $publishedRelease->version])
+                    ? __('dashboard.readiness_release_ok', ['version' => $publishedRelease->pluck('version', 'platform')->map(fn ($version, $platform) => AgentRelease::platformLabel($platform).' '.$version)->join(', ')])
                     : __('dashboard.readiness_release_missing'),
             ],
             [

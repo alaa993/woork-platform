@@ -1,10 +1,17 @@
 ; Woork Agent installer script for Inno Setup.
 ; Build on Windows after running deploy/windows/build-agent.ps1.
 
+#ifndef MyBinarySuffix
+  #define MyBinarySuffix ""
+#endif
+#ifndef MyWinSWFile
+  #define MyWinSWFile "WinSW-x64.exe"
+#endif
+
 #define MyAppName "Woork Agent"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Woork"
-#define MyAppExeName "WoorkAgentControl.exe"
+#define MyAppExeName "WoorkAgentControl{#MyBinarySuffix}.exe"
 
 [Setup]
 AppId={{8F9AE3EA-6E5E-41D8-A73A-8F7D31E01B4B}
@@ -31,11 +38,11 @@ Name: "{commonappdata}\WoorkAgent\logs"
 Name: "{commonappdata}\WoorkAgent\models"
 
 [Files]
-Source: "..\..\dist\woork-agent.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\dist\WoorkAgentControl.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\woork-agent{#MyBinarySuffix}.exe"; DestDir: "{app}"; DestName: "woork-agent.exe"; Flags: ignoreversion
+Source: "..\..\dist\WoorkAgentControl{#MyBinarySuffix}.exe"; DestDir: "{app}"; DestName: "WoorkAgentControl.exe"; Flags: ignoreversion
 Source: "..\windows\config.production.json"; DestDir: "{commonappdata}\WoorkAgent"; DestName: "config.json"; Flags: onlyifdoesntexist
 Source: "..\winsw\woork-agent-service.xml"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\winsw\WinSW-x64.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\winsw\{#MyWinSWFile}"; DestDir: "{app}"; DestName: "WinSW.exe"; Flags: ignoreversion
 Source: "..\windows\install-service.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "..\windows\uninstall-service.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 

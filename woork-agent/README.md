@@ -143,12 +143,27 @@ Recommended flow:
 Windows packaging helpers are included:
 
 - `deploy/windows/build-agent.ps1`
+- `deploy/windows/build-agent-x86.ps1`
+- `deploy/windows/build-agent-win7.ps1`
+- `deploy/windows/build-installer.ps1`
+- `deploy/windows/build-installer-x86.ps1`
+- `deploy/windows/build-installer-win7.ps1`
 - `deploy/windows/package-release.ps1`
 - `release-manifest.example.json`
 
 Suggested release process:
 
-1. Run `build-agent.ps1`.
-2. Run `package-release.ps1 -Version 1.0.0`.
-3. Upload the generated ZIP from the Laravel admin release form.
-4. Publish the release in `Agent Downloads`.
+1. Build the matching target:
+   `build-agent.ps1 -Architecture x64`, or `build-agent-x86.ps1`, or `build-agent-win7.ps1`.
+2. Build the matching installer:
+   `build-installer.ps1 -Architecture x64`, or `build-installer-x86.ps1`, or `build-installer-win7.ps1`.
+3. Package the portable release if needed:
+   `package-release.ps1 -Version 1.0.0 -Platform windows-x64`
+4. Upload each platform artifact from the Laravel admin release form under its matching platform.
+5. Publish the release in `Agent Downloads`.
+
+Recommended platform matrix:
+
+- `windows-x64`: Windows 10/11 64-bit primary release.
+- `windows-x86`: Windows 10 32-bit compatibility release.
+- `windows-7-legacy`: Windows 7 fallback release with reduced capabilities.

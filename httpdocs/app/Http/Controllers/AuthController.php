@@ -53,6 +53,7 @@ class AuthController extends Controller
         if ($user = User::where('phone', $phone)->first()) {
             if (!$user->organization_id) {
                 $plan = Plan::where('slug', 'starter')->first() ?? Plan::first();
+                $trialEndsAt = Subscription::trialEndsAtFor($plan);
                 $org = Organization::create([
                     'name' => $user->name ?: 'Woork customer',
                     'language' => $user->language ?: app()->getLocale(),
@@ -63,8 +64,8 @@ class AuthController extends Controller
                     'organization_id' => $org->id,
                     'plan_id' => $plan?->id,
                     'status' => 'trial',
-                    'trial_ends_at' => now()->addDays($plan?->trial_days ?? 14),
-                    'current_period_end' => now()->addDays($plan?->trial_days ?? 14),
+                    'trial_ends_at' => $trialEndsAt,
+                    'current_period_end' => $trialEndsAt,
                 ]);
                 $user->organization_id = $org->id;
                 $user->save();

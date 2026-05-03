@@ -1,5 +1,19 @@
 $ErrorActionPreference = "Continue"
 
+$OsVersion = [System.Environment]::OSVersion.Version
+$IsWindows7Family = ($OsVersion.Major -lt 10)
+
+if (-not $IsWindows7Family) {
+    Add-Type -AssemblyName System.Windows.Forms
+    [System.Windows.Forms.MessageBox]::Show(
+        "Woork Agent Legacy is for Windows 7 / legacy PCs only.`r`n`r`nThis computer is running Windows 10/11 or newer. Use the standard Windows 10/11 Woork Agent package instead.",
+        "Woork Agent Legacy",
+        [System.Windows.Forms.MessageBoxButtons]::OK,
+        [System.Windows.Forms.MessageBoxIcon]::Warning
+    ) | Out-Null
+    exit 1
+}
+
 $InstallDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if ((Split-Path -Leaf $InstallDir) -ieq "scripts") {
     $InstallDir = Resolve-Path (Join-Path $InstallDir "..")

@@ -13,6 +13,7 @@ use App\Models\Room;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ApiAgentController extends Controller
@@ -34,6 +35,58 @@ class ApiAgentController extends Controller
 
         abort_unless($device, 401, 'Invalid pairing token');
         $this->assertOrganizationActive($device->organization);
+
+        $existingDevice = AgentDevice::where('device_uuid', $data['device_uuid'])
+            ->whereKeyNot($device->id)
+            ->first();
+
+        if ($existingDevice) {
+            if ($existingDevice->organization_id !== $device->organization_id) {
+                return response()->json([
+                    'ok' => false,
+                    'error' => 'This device UUID is already paired to another organization.',
+                    'existing_agent_device_id' => $existingDevice->id,
+                ], 409);
+            }
+
+            $plainToken = Str::random(60);
+
+            DB::transaction(function () use ($device, $existingDevice, $data, $request, $plainToken) {
+                Camera::where('agent_device_id', $device->id)->update([
+                    'agent_device_id' => $existingDevice->id,
+                ]);
+
+                $existingDevice->fill([
+                    'name' => $data['name'],
+                    'device_uuid' => $data['device_uuid'],
+                    'pairing_token' => $device->pairing_token,
+                    'version' => $data['version'] ?? $existingDevice->version,
+                    'os' => $data['os'] ?? $existingDevice->os,
+                    'capabilities' => $data['capabilities'] ?? $existingDevice->capabilities,
+                    'api_token_hash' => hash('sha256', $plainToken),
+                    'status' => 'online',
+                    'last_ip' => $request->ip(),
+                    'last_seen_at' => now(),
+                    'is_active' => true,
+                ])->save();
+
+                $device->update([
+                    'device_uuid' => 'replaced-'.Str::uuid(),
+                    'pairing_token' => 'replaced-'.Str::uuid(),
+                    'api_token_hash' => null,
+                    'status' => 'replaced',
+                    'is_active' => false,
+                ]);
+            });
+
+            return response()->json([
+                'ok' => true,
+                'token' => $plainToken,
+                'organization_id' => $existingDevice->organization_id,
+                'agent_device_id' => $existingDevice->id,
+                'reused_existing_device' => true,
+            ]);
+        }
 
         if ($device->device_uuid !== $data['device_uuid']) {
             $device->device_uuid = $data['device_uuid'];

@@ -32,10 +32,7 @@ class EnforceSubscription
             ? Subscription::where('organization_id', $orgId)->latest('id')->first()
             : null;
 
-        $active = $sub && (
-            $sub->status === 'active' ||
-            ($sub->status === 'trial' && optional($sub->trial_ends_at)->isFuture())
-        );
+        $active = $sub?->isCurrentlyActive() ?? false;
 
         if ($active) {
             return $next($request);

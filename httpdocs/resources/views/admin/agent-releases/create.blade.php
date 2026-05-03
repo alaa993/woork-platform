@@ -22,7 +22,11 @@
 
     <div>
       <label class="block text-sm mb-1">{{ __('dashboard.agent_release_platform') }}</label>
-      <input name="platform" value="{{ old('platform', 'windows-x64') }}" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 shadow-sm focus:border-emerald-500 focus:ring-emerald-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700">
+      <select name="platform" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-800 shadow-sm focus:border-emerald-500 focus:ring-emerald-300 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700">
+        @foreach($supportedPlatforms as $platform => $meta)
+          <option value="{{ $platform }}" @selected(old('platform', 'windows-x64') === $platform)>{{ $meta['label'] }}</option>
+        @endforeach
+      </select>
     </div>
 
     <div>

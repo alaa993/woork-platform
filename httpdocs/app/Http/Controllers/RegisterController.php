@@ -61,6 +61,7 @@ class RegisterController extends Controller {
             );
             if(is_null($user->organization_id)){
                 $plan = Plan::where('slug',$pending['plan'])->firstOrFail();
+                $trialEndsAt = Subscription::trialEndsAtFor($plan);
                 $org = Organization::create([
                     'name'=>$pending['org_name'],
                     'company_type'=>$pending['company_type'] ?? 'company',
@@ -72,8 +73,8 @@ class RegisterController extends Controller {
                     'organization_id'=>$org->id,
                     'plan_id'=>$plan->id,
                     'status'=>'trial',
-                    'trial_ends_at'=>now()->addDays(14),
-                    'current_period_end'=>now()->addDays(14),
+                    'trial_ends_at'=>$trialEndsAt,
+                    'current_period_end'=>$trialEndsAt,
                 ]);
                 $user->organization_id=$org->id;
                 $user->name=$user->name?:$pending['name'];

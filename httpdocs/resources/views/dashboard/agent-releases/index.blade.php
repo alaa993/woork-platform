@@ -11,10 +11,13 @@
   <div class="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-gradient-to-br from-sky-50 via-white to-emerald-50 dark:from-sky-950/20 dark:via-slate-950 dark:to-slate-950 p-6 shadow-sm">
     <h2 class="text-2xl font-semibold tracking-tight">{{ __('dashboard.agent_releases') }}</h2>
     <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{{ __('dashboard.agent_releases_intro') }}</p>
-    @if($latestStable)
+    @if($latestStable->isNotEmpty())
       <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
-        <span class="rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 px-3 py-1">{{ __('dashboard.agent_release_latest') }} {{ $latestStable->version }}</span>
-        <a href="{{ asset($latestStable->artifact_path) }}" class="rounded-xl bg-emerald-600 text-white px-4 py-2">{{ __('dashboard.agent_download') }}</a>
+        @foreach($latestStable as $release)
+          <a href="{{ asset($release->artifact_path) }}" class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:text-emerald-200">
+            {{ \App\Models\AgentRelease::platformLabel($release->platform) }} · {{ $release->version }}
+          </a>
+        @endforeach
       </div>
     @endif
   </div>
@@ -25,7 +28,7 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="text-lg font-semibold">{{ $release->version }}</div>
-            <div class="text-xs text-slate-500 dark:text-slate-400">{{ $release->platform }} · {{ $release->channel }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">{{ \App\Models\AgentRelease::platformLabel($release->platform) }} · {{ $release->channel }}</div>
           </div>
           <span class="rounded-full px-2.5 py-1 text-xs {{ $release->is_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300' }}">
             {{ $release->is_active ? 'active' : 'inactive' }}

@@ -106,35 +106,53 @@ class AgentDevicesController extends Controller
     {
         $this->authorizeDevice($agentDevice);
 
-        $release = AgentRelease::published()
-            ->where('channel', 'stable')
-            ->where('platform', 'windows-x64')
-            ->latest('published_at')
-            ->first();
+        $stableReleases = AgentRelease::publishedStableByPlatform()->keyBy('platform');
+        $fallbackArtifacts = [
+            'windows-x64' => 'downloads/woork-agent-windows-x64.zip',
+            'windows-x86' => 'downloads/woork-agent-windows-x86.zip',
+            'windows-7-legacy' => 'downloads/WoorkAgentSetup-LegacyWin7-1.0.0.exe',
+        ];
 
-        $installerPath = 'downloads/WoorkAgentSetup-1.0.0.exe';
-        $legacyInstallerPath = 'downloads/WoorkAgentSetup-LegacyWin7-1.0.0.exe';
-        $hasInstaller = file_exists(public_path($installerPath));
-        $hasLegacyInstaller = file_exists(public_path($legacyInstallerPath));
-        $installerSize = $hasInstaller ? filesize(public_path($installerPath)) : $release?->artifact_size;
-        $legacyInstallerSize = $hasLegacyInstaller ? filesize(public_path($legacyInstallerPath)) : null;
+        $downloadVariants = collect(AgentRelease::supportedPlatforms())
+            ->map(function (array $meta, string $platform) use ($stableReleases, $fallbackArtifacts) {
+                $release = $stableReleases->get($platform);
+                $fallbackPath = $fallbackArtifacts[$platform] ?? null;
+                $publicFallbackPath = $fallbackPath ? public_path($fallbackPath) : null;
+                $hasFallbackArtifact = $publicFallbackPath && file_exists($publicFallbackPath);
+                $artifactPath = $release?->artifact_path ?? ($hasFallbackArtifact ? $fallbackPath : null);
 
-        $downloadPath = match (true) {
-            $hasInstaller => asset($installerPath),
-            (bool) $release => asset($release->artifact_path),
-            default => asset('downloads/woork-agent-windows-x64.zip'),
-        };
+                if (! $artifactPath) {
+                    return null;
+                }
 
-        $legacyDownloadPath = $hasLegacyInstaller ? asset($legacyInstallerPath) : null;
+                $artifactSize = $release?->artifact_size;
+                if (! $artifactSize && $hasFallbackArtifact) {
+                    $artifactSize = filesize($publicFallbackPath);
+                }
+
+                return [
+                    'platform' => $platform,
+                    'label' => $meta['label'],
+                    'description' => $meta['description'],
+                    'download_url' => asset($artifactPath),
+                    'artifact_path' => $artifactPath,
+                    'artifact_size' => $artifactSize,
+                    'release' => $release,
+                    'is_legacy' => $platform === 'windows-7-legacy',
+                    'is_primary' => $platform === 'windows-x64',
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $primaryVariant = $downloadVariants->firstWhere('is_primary', true) ?? $downloadVariants->first();
 
         return view('dashboard.agent-devices.install', [
             'agentDevice' => $agentDevice,
-            'release' => $release,
+            'release' => $primaryVariant['release'] ?? null,
             'onboarding' => app(OrganizationOnboardingService::class)->summary($this->organization()),
-            'downloadPath' => $downloadPath,
-            'legacyDownloadPath' => $legacyDownloadPath,
-            'installerSize' => $installerSize,
-            'legacyInstallerSize' => $legacyInstallerSize,
+            'downloadVariants' => $downloadVariants,
+            'primaryVariant' => $primaryVariant,
             'registerEndpoint' => url('/api/agent/register'),
             'configEndpoint' => url('/api/agent/config'),
             'heartbeatEndpoint' => url('/api/agent/heartbeat'),

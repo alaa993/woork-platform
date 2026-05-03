@@ -2,11 +2,17 @@ $ErrorActionPreference = "Stop"
 
 $BaseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $InstallDir = Resolve-Path (Join-Path $BaseDir "..")
-$ExePath = Join-Path $InstallDir "WinSW-x64.exe"
+$ExePath = if (Test-Path (Join-Path $InstallDir "WinSW.exe")) {
+    Join-Path $InstallDir "WinSW.exe"
+} elseif (Test-Path (Join-Path $InstallDir "WinSW-x64.exe")) {
+    Join-Path $InstallDir "WinSW-x64.exe"
+} else {
+    Join-Path $InstallDir "WinSW-x86.exe"
+}
 $XmlPath = Join-Path $InstallDir "woork-agent-service.xml"
 
 if (-not (Test-Path $ExePath)) {
-    throw "WinSW-x64.exe not found at $ExePath."
+    throw "WinSW executable not found at $ExePath."
 }
 
 Write-Host "Stopping Woork Agent service..."

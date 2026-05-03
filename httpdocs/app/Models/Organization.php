@@ -18,7 +18,8 @@ class Organization extends Model
     public function summaries()   { return $this->hasMany(DailySummary::class); }
     public function alerts()      { return $this->hasMany(Alert::class); }
     public function policies()    { return $this->hasMany(Policy::class); }
-    public function subscription(){ return $this->hasOne(Subscription::class); }
+    public function subscriptions(){ return $this->hasMany(Subscription::class); }
+    public function subscription(){ return $this->hasOne(Subscription::class)->latestOfMany(); }
 
     // Helper scope
     public function scopeOrg($q, $orgId){ return $q->where('organization_id', $orgId); }
@@ -31,16 +32,8 @@ class Organization extends Model
     public function isActive(): bool
     {
         $subscription = $this->subscription;
-        if (! $subscription) {
-            return false;
-        }
 
-        if (in_array($subscription->status, ['trial', 'trialing'], true)) {
-            return ! $subscription->trial_ends_at || $subscription->trial_ends_at->isFuture();
-        }
-
-        return $subscription->status === 'active'
-            && (! $subscription->current_period_end || $subscription->current_period_end->isFuture());
+        return $subscription?->isCurrentlyActive() ?? false;
     }
 
     public function limitFor(string $resource): ?int

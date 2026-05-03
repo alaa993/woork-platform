@@ -65,6 +65,10 @@ missing API DLL or PyInstaller runtime errors.
 The Legacy installer does not include `WoorkAgentControl.exe`. It installs a
 PowerShell/Windows Forms control panel to avoid `_tkinter` failures on Windows 7.
 
+The legacy executable must be built with **Python 3.8.x exactly**. Building the
+Windows 7 package with newer Python versions can produce runtime import errors
+such as `_socket` failing to load on Windows 7.
+
 Upload it to:
 
 ```text
@@ -95,6 +99,15 @@ For Windows 7 legacy builds, use:
 ```powershell
 .\deploy\windows\build-installer-win7.ps1
 ```
+
+Windows 7 legacy target checklist:
+
+- Windows 7 SP1
+- Python 3.8.x for the legacy build environment
+- Required Windows updates for modern Python runtime loading, especially
+  `KB2533623`
+- Use the dedicated legacy workflow or `build-agent-win7.ps1`, never the main
+  `build-agent.ps1`
 
 ## Prepare WinSW
 

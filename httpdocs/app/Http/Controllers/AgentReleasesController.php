@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AgentReleasesController extends Controller
@@ -18,11 +19,7 @@ class AgentReleasesController extends Controller
             ->orderByDesc('id')
             ->paginate(12);
 
-        $latestStable = AgentRelease::published()
-            ->where('channel', 'stable')
-            ->where('platform', 'windows-x64')
-            ->latest('published_at')
-            ->first();
+        $latestStable = AgentRelease::publishedStableByPlatform();
 
         return view('dashboard.agent-releases.index', compact('releases', 'latestStable'));
     }
@@ -30,7 +27,9 @@ class AgentReleasesController extends Controller
     public function create(): View
     {
         $this->authorizeAdmin();
-        return view('admin.agent-releases.create');
+        $supportedPlatforms = AgentRelease::supportedPlatforms();
+
+        return view('admin.agent-releases.create', compact('supportedPlatforms'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -38,9 +37,16 @@ class AgentReleasesController extends Controller
         $this->authorizeAdmin();
 
         $data = $request->validate([
-            'version' => 'required|string|max:50|unique:agent_releases,version',
+            'version' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('agent_releases', 'version')->where(
+                    fn ($query) => $query->where('platform', $request->input('platform'))
+                ),
+            ],
             'channel' => 'required|string|max:20',
-            'platform' => 'required|string|max:50',
+            'platform' => ['required', 'string', 'max:50', Rule::in(AgentRelease::supportedPlatformKeys())],
             'artifact' => 'nullable|file|max:512000',
             'artifact_path' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
