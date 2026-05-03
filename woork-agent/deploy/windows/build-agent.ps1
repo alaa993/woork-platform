@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 $BaseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AgentRoot = Resolve-Path (Join-Path $BaseDir "..\..")
-$PythonArch = if ([Environment]::Is64BitProcess) { "x64" } else { "x86" }
+$PythonArch = (& python -c "import struct; print('x64' if struct.calcsize('P') * 8 == 64 else 'x86')").Trim()
 
 if ($PythonArch -ne $Architecture) {
     throw "This script must run under a $Architecture Python runtime. Current Python architecture is $PythonArch."
