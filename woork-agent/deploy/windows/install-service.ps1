@@ -1,8 +1,8 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [switch]$Start
 )
+
+$ErrorActionPreference = "Stop"
 
 $BaseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $InstallDir = Resolve-Path (Join-Path $BaseDir "..")

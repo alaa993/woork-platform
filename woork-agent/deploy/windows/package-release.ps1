@@ -1,11 +1,11 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [Parameter(Mandatory = $true)]
     [string]$Version,
     [ValidateSet("windows-x64", "windows-x86")]
     [string]$Platform = "windows-x64"
 )
+
+$ErrorActionPreference = "Stop"
 
 $BaseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AgentRoot = Resolve-Path (Join-Path $BaseDir "..\..")
