@@ -10,13 +10,6 @@ class WoorkSaaSSeeder extends Seeder
 {
     public function run(): void
     {
-        $installerPath = public_path('downloads/WoorkAgentSetup-1.0.0.exe');
-        $fallbackZipPath = public_path('downloads/woork-agent-windows-x64.zip');
-        $agentArtifactPath = file_exists($installerPath)
-            ? 'downloads/WoorkAgentSetup-1.0.0.exe'
-            : 'downloads/woork-agent-windows-x64.zip';
-        $agentArtifactAbsolutePath = public_path($agentArtifactPath);
-
         $basic = Plan::firstOrCreate(
             ['slug' => 'basic'],
             [
@@ -30,22 +23,53 @@ class WoorkSaaSSeeder extends Seeder
             ]
         );
 
-        AgentRelease::firstOrCreate(
-            ['version' => '1.0.0'],
-            [
-                'channel' => 'stable',
-                'platform' => 'windows-x64',
-                'artifact_path' => $agentArtifactPath,
-                'artifact_name' => basename($agentArtifactPath),
-                'checksum_sha256' => file_exists($agentArtifactAbsolutePath) ? hash_file('sha256', $agentArtifactAbsolutePath) : null,
-                'artifact_size' => file_exists($agentArtifactAbsolutePath) ? filesize($agentArtifactAbsolutePath) : null,
-                'notes' => file_exists($installerPath)
-                    ? "Windows installer\nControl app included\nRuns as Windows service\nCamera diagnostics enabled"
-                    : "Developer ZIP fallback\nBuild WoorkAgentSetup-1.0.0.exe before customer distribution",
-                'is_active' => true,
-                'published_at' => Carbon::now(),
-            ]
-        );
+        $releaseArtifacts = [
+            'windows-x64' => [
+                'candidates' => [
+                    'downloads/WoorkAgentSetup-1.0.0.exe',
+                    'downloads/woork-agent-windows-x64.zip',
+                ],
+                'notes' => "Windows 10/11 64-bit release\nControl app included\nRuns as Windows service\nCamera diagnostics enabled",
+                'missing' => "Windows 10/11 x64 package expected\nUpload WoorkAgentSetup-1.0.0.exe or woork-agent-windows-x64.zip before customer distribution",
+            ],
+            'windows-x86' => [
+                'candidates' => [
+                    'downloads/WoorkAgentSetup-x86-1.0.0.exe',
+                    'downloads/woork-agent-windows-x86.zip',
+                ],
+                'notes' => "Windows 10 32-bit compatibility release\nControl app included\nRuns as Windows service",
+                'missing' => "Windows 10 x86 package expected\nUpload WoorkAgentSetup-x86-1.0.0.exe before customer distribution",
+            ],
+            'windows-7-legacy' => [
+                'candidates' => [
+                    'downloads/WoorkAgentSetup-LegacyWin7-1.0.0.exe',
+                ],
+                'notes' => "Windows 7 legacy release\nPowerShell control included\nReduced runtime feature set",
+                'missing' => "Windows 7 legacy package expected\nUpload WoorkAgentSetup-LegacyWin7-1.0.0.exe before customer distribution",
+            ],
+        ];
+
+        foreach ($releaseArtifacts as $platform => $artifactMeta) {
+            $artifactPath = collect($artifactMeta['candidates'])
+                ->first(fn (string $candidate) => file_exists(public_path($candidate)))
+                ?? $artifactMeta['candidates'][0];
+            $absoluteArtifactPath = public_path($artifactPath);
+            $artifactExists = file_exists($absoluteArtifactPath);
+
+            AgentRelease::firstOrCreate(
+                ['version' => '1.0.0', 'platform' => $platform],
+                [
+                    'channel' => 'stable',
+                    'artifact_path' => $artifactPath,
+                    'artifact_name' => basename($artifactPath),
+                    'checksum_sha256' => $artifactExists ? hash_file('sha256', $absoluteArtifactPath) : null,
+                    'artifact_size' => $artifactExists ? filesize($absoluteArtifactPath) : null,
+                    'notes' => $artifactExists ? $artifactMeta['notes'] : $artifactMeta['missing'],
+                    'is_active' => true,
+                    'published_at' => Carbon::now(),
+                ]
+            );
+        }
 
         $org = Organization::firstOrCreate(
             ['email' => 'demo@org.test'],

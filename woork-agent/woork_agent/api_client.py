@@ -4,6 +4,7 @@ import json
 import time
 import urllib.error
 import urllib.request
+from dataclasses import fields
 from typing import Any, Optional
 
 from .models import AgentSettings, CameraConfig, RuntimeState
@@ -41,7 +42,7 @@ class CloudClient:
 
     def fetch_config(self, token: str) -> list[CameraConfig]:
         data = self._request("GET", "/api/agent/config", token=token)
-        return [CameraConfig(**camera) for camera in data.get("cameras", [])]
+        return [_camera_from_payload(camera) for camera in data.get("cameras", [])]
 
     def send_heartbeat(
         self,
@@ -94,7 +95,7 @@ class CloudClient:
                     return json.loads(data) if data else {}
             except urllib.error.HTTPError as exc:
                 if exc.code < 500:
-                    raise RuntimeError(f"Cloud request failed: {exc.code} {exc.reason}") from exc
+                    raise RuntimeError(_http_error_message(exc)) from exc
                 last_error = exc
             except urllib.error.URLError as exc:
                 last_error = exc
@@ -103,7 +104,48 @@ class CloudClient:
                 time.sleep(self.settings.retry_backoff_seconds * attempt)
 
         if isinstance(last_error, urllib.error.HTTPError):
-            raise RuntimeError(f"Cloud request failed: {last_error.code} {last_error.reason}") from last_error
+            raise RuntimeError(_http_error_message(last_error)) from last_error
         if isinstance(last_error, urllib.error.URLError):
             raise RuntimeError(f"Cloud request unreachable: {last_error.reason}") from last_error
         raise RuntimeError("Cloud request failed for an unknown reason")
+
+
+def _camera_from_payload(camera: dict[str, Any]) -> CameraConfig:
+    allowed = {field.name for field in fields(CameraConfig)}
+    filtered = {key: value for key, value in camera.items() if key in allowed}
+    return CameraConfig(**filtered)
+
+
+def _http_error_message(exc: urllib.error.HTTPError) -> str:
+    prefix = f"Cloud request failed: {exc.code} {exc.reason}"
+
+    try:
+        raw = exc.read().decode("utf-8")
+    except Exception:  # noqa: BLE001
+        return prefix
+
+    if not raw:
+        return prefix
+
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return prefix
+
+    if not isinstance(payload, dict):
+        return prefix
+
+    for key in ("error", "message", "error_description"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+
+    errors = payload.get("errors")
+    if isinstance(errors, dict):
+        for value in errors.values():
+            if isinstance(value, list) and value:
+                return str(value[0])
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+
+    return prefix
