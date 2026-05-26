@@ -29,7 +29,8 @@ class ApiAgentController extends Controller
             'capabilities' => 'nullable|array',
         ]);
 
-        $device = AgentDevice::where('pairing_token', $data['pairing_token'])
+        $device = AgentDevice::with('organization.subscription')
+            ->where('pairing_token', $data['pairing_token'])
             ->where('is_active', true)
             ->first();
 
@@ -56,10 +57,21 @@ class ApiAgentController extends Controller
                     'agent_device_id' => $existingDevice->id,
                 ]);
 
+                // Release unique pairing_token / device_uuid on the placeholder row first.
+                // Assigning the token to $existingDevice before this update causes a 500
+                // duplicate-key error because both rows still share the same pairing_token.
+                $device->update([
+                    'device_uuid' => 'replaced-'.Str::uuid(),
+                    'pairing_token' => 'replaced-'.Str::uuid(),
+                    'api_token_hash' => null,
+                    'status' => 'replaced',
+                    'is_active' => false,
+                ]);
+
                 $existingDevice->fill([
                     'name' => $data['name'],
                     'device_uuid' => $data['device_uuid'],
-                    'pairing_token' => $device->pairing_token,
+                    'pairing_token' => $data['pairing_token'],
                     'version' => $data['version'] ?? $existingDevice->version,
                     'os' => $data['os'] ?? $existingDevice->os,
                     'capabilities' => $data['capabilities'] ?? $existingDevice->capabilities,
@@ -69,14 +81,6 @@ class ApiAgentController extends Controller
                     'last_seen_at' => now(),
                     'is_active' => true,
                 ])->save();
-
-                $device->update([
-                    'device_uuid' => 'replaced-'.Str::uuid(),
-                    'pairing_token' => 'replaced-'.Str::uuid(),
-                    'api_token_hash' => null,
-                    'status' => 'replaced',
-                    'is_active' => false,
-                ]);
             });
 
             return response()->json([
