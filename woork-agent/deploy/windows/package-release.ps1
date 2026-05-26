@@ -44,6 +44,8 @@ Copy-Item (Join-Path $AgentRoot "README.md") (Join-Path $PackagePath "README.md"
 Copy-Item (Join-Path $AgentRoot "PLATFORM-SUPPORT.md") (Join-Path $PackagePath "PLATFORM-SUPPORT.md")
 Copy-Item (Join-Path $AgentRoot "deploy\winsw\woork-agent-service.xml") (Join-Path $PackagePath "winsw\woork-agent-service.xml")
 Copy-Item $WinSwPath (Join-Path $PackagePath "winsw\WinSW.exe")
+Copy-Item (Join-Path $AgentRoot "deploy\windows\agent-config-paths.ps1") (Join-Path $PackagePath "scripts\agent-config-paths.ps1")
+Copy-Item (Join-Path $AgentRoot "deploy\windows\sync-service-config.ps1") (Join-Path $PackagePath "scripts\sync-service-config.ps1")
 Copy-Item (Join-Path $AgentRoot "deploy\windows\install-service.ps1") (Join-Path $PackagePath "scripts\install-service.ps1")
 Copy-Item (Join-Path $AgentRoot "deploy\windows\uninstall-service.ps1") (Join-Path $PackagePath "scripts\uninstall-service.ps1")
 

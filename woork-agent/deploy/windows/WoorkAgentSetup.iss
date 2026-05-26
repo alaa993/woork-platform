@@ -43,6 +43,8 @@ Source: "..\..\dist\WoorkAgentControl{#MyBinarySuffix}.exe"; DestDir: "{app}"; D
 Source: "..\windows\config.production.json"; DestDir: "{commonappdata}\WoorkAgent"; DestName: "config.json"; Flags: onlyifdoesntexist
 Source: "..\winsw\woork-agent-service.xml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\winsw\{#MyWinSWFile}"; DestDir: "{app}"; DestName: "WinSW.exe"; Flags: ignoreversion
+Source: "..\windows\agent-config-paths.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
+Source: "..\windows\sync-service-config.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "..\windows\install-service.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "..\windows\uninstall-service.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 

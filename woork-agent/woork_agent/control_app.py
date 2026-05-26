@@ -13,6 +13,7 @@ from tkinter.ttk import Notebook
 from typing import Optional
 
 from .diagnostics import run_doctor
+from .paths import resolve_config_path
 from .runtime import AgentRuntime, setup_file_logging
 from .settings import load_settings
 
@@ -64,23 +65,7 @@ class WoorkControlApp:
         self._refresh_status_loop()
 
     def _resolve_config_path(self, config_path: Path) -> Path:
-        if self._is_writable_path(config_path):
-            return config_path
-
-        fallback_root = Path(os.getenv("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
-        fallback_path = fallback_root / "WoorkAgent" / "config.json"
-        fallback_path.parent.mkdir(parents=True, exist_ok=True)
-        return fallback_path
-
-    def _is_writable_path(self, config_path: Path) -> bool:
-        try:
-            config_path.parent.mkdir(parents=True, exist_ok=True)
-            probe_path = config_path.parent / ".woork-write-test"
-            probe_path.write_text("ok", encoding="utf-8")
-            probe_path.unlink(missing_ok=True)
-            return True
-        except OSError:
-            return False
+        return resolve_config_path(config_path)
 
     def _default_config_payload(self) -> dict:
         data = dict(DEFAULT_CONFIG)
@@ -264,6 +249,11 @@ class WoorkControlApp:
             raise RuntimeError("Pairing token is required.")
         runtime = self._runtime()
         runtime.pair(token)
+        if os.name == "nt":
+            try:
+                self._sync_windows_service_config()
+            except Exception as exc:  # noqa: BLE001
+                self._log(f"Service config sync warning: {exc}")
         self._log("Device paired successfully.")
         self._refresh_status()
 
@@ -356,8 +346,44 @@ class WoorkControlApp:
 
         return "Installed"
 
+    def _install_root(self) -> Optional[Path]:
+        if getattr(sys, "frozen", False):
+            return Path(sys.executable).resolve().parent
+        return None
+
+    def _sync_windows_service_config(self) -> None:
+        install_root = self._install_root()
+        if install_root is None:
+            return
+
+        script_path = install_root / "scripts" / "sync-service-config.ps1"
+        if not script_path.exists():
+            return
+
+        result = subprocess.run(
+            [
+                "powershell.exe",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(script_path),
+                "-InstallDir",
+                str(install_root),
+                "-ConfigPath",
+                str(self.config_path),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                result.stderr.strip() or result.stdout.strip() or "Failed to synchronize service config"
+            )
+
     def _start_windows_service(self) -> None:
         self._save_config()
+        self._sync_windows_service_config()
         result = subprocess.run(["sc", "start", "woork-agent"], capture_output=True, text=True, check=False)
         if result.returncode not in {0, 1056}:
             raise RuntimeError(result.stderr or result.stdout or "Failed to start Woork Agent service")

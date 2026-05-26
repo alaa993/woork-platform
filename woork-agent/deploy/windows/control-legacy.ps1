@@ -20,42 +20,37 @@ if ((Split-Path -Leaf $InstallDir) -ieq "scripts") {
 }
 
 $AgentExe = Join-Path $InstallDir "woork-agent.exe"
-$WinSwExe = Join-Path $InstallDir "WinSW-x64.exe"
-$ServiceXml = Join-Path $InstallDir "woork-agent-service.xml"
+$SharedScript = Join-Path $InstallDir "scripts\agent-config-paths.ps1"
+if (-not (Test-Path $SharedScript)) {
+    $SharedScript = Join-Path $InstallDir "agent-config-paths.ps1"
+}
+if (-not (Test-Path $SharedScript)) {
+    throw "Missing agent-config-paths.ps1 beside the Legacy installer."
+}
 
-function Test-DirectoryWritable {
-    param([string]$Path)
+. $SharedScript
+
+$ConfigPath = Get-AgentConfigPath -PreferredPath (Join-Path (Get-AgentProgramDataDir) "config.json")
+$ConfigDir = Split-Path -Parent $ConfigPath
+$UsingLocalConfig = $ConfigDir -ne (Get-AgentProgramDataDir)
+
+function Update-ServiceConfig {
+    param([switch]$RestartService)
     try {
-        if (-not (Test-Path $Path)) {
-            New-Item -ItemType Directory -Path $Path -Force | Out-Null
-        }
-        $probe = Join-Path $Path ".woork-write-test"
-        [System.IO.File]::WriteAllText($probe, "ok")
-        Remove-Item $probe -Force -ErrorAction SilentlyContinue
-        return $true
+        Sync-AgentServiceConfig -InstallDir $InstallDir -ConfigPath $ConfigPath -RestartService:$RestartService
     } catch {
-        return $false
+        return $_.Exception.Message
     }
+    return $null
 }
 
-function Resolve-ConfigDir {
-    $programDataDir = "C:\ProgramData\WoorkAgent"
-    if (Test-DirectoryWritable $programDataDir) {
-        return $programDataDir
+function Get-ServiceXmlPath {
+    $runtimeXml = Get-AgentServiceRuntimeXml -InstallDir $InstallDir
+    if (Test-Path $runtimeXml) {
+        return $runtimeXml
     }
-
-    $localRoot = [Environment]::GetFolderPath("LocalApplicationData")
-    $localDir = Join-Path $localRoot "WoorkAgent"
-    if (-not (Test-DirectoryWritable $localDir)) {
-        throw "No writable configuration directory was found for Woork Agent Legacy."
-    }
-
-    return $localDir
+    return (Get-AgentServiceTemplateXml -InstallDir $InstallDir)
 }
-
-$ConfigDir = Resolve-ConfigDir
-$ConfigPath = Join-Path $ConfigDir "config.json"
-$UsingLocalConfig = $ConfigDir -ne "C:\ProgramData\WoorkAgent"
 
 function Get-JsonStringValue {
     param([string]$Text, [string]$Key, [string]$Default)
@@ -153,12 +148,15 @@ function Run-AgentCommand {
 
 function Run-ServiceCommand {
     param([string]$Command)
-    if (-not (Test-Path $WinSwExe)) {
-        return "WinSW-x64.exe was not found: $WinSwExe"
+    try {
+        $winSwExe = Get-AgentWinSwExecutable -InstallDir $InstallDir
+        $serviceXml = Get-ServiceXmlPath
+    } catch {
+        return $_.Exception.Message
     }
     $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = $WinSwExe
-    $psi.Arguments = "$Command `"$ServiceXml`""
+    $psi.FileName = $winSwExe
+    $psi.Arguments = "$Command `"$serviceXml`""
     $psi.WorkingDirectory = $InstallDir
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
@@ -241,7 +239,12 @@ $saveButton.Size = New-Object System.Drawing.Size(105, 30)
 $saveButton.Add_Click({
     $current = Load-AgentConfig
     Write-AgentConfig $cloudInput.Text $nameInput.Text $current.DeviceUuid
-    Append-Output "Settings saved."
+    $syncMessage = Update-ServiceConfig
+    if ($syncMessage) {
+        Append-Output "Settings saved, but service config sync failed: $syncMessage"
+    } else {
+        Append-Output "Settings saved and service config synchronized."
+    }
 })
 $form.Controls.Add($saveButton)
 
@@ -257,6 +260,12 @@ $pairButton.Add_Click({
         return
     }
     Append-Output (Run-AgentCommand ("pair --config `"$ConfigPath`" --pairing-token `"" + $tokenInput.Text + "`""))
+    $syncMessage = Update-ServiceConfig
+    if ($syncMessage) {
+        Append-Output "Pairing command sent, but service config sync failed: $syncMessage"
+    } else {
+        Append-Output "Service config synchronized for the paired device."
+    }
 })
 $form.Controls.Add($pairButton)
 
@@ -264,7 +273,14 @@ $startButton = New-Object System.Windows.Forms.Button
 $startButton.Text = "Start Service"
 $startButton.Location = New-Object System.Drawing.Point(248, 124)
 $startButton.Size = New-Object System.Drawing.Size(105, 30)
-$startButton.Add_Click({ Append-Output (Run-ServiceCommand "start") })
+$startButton.Add_Click({
+    $syncMessage = Update-ServiceConfig
+    if ($syncMessage) {
+        Append-Output "Could not synchronize service config: $syncMessage"
+        return
+    }
+    Append-Output (Run-ServiceCommand "start")
+})
 $form.Controls.Add($startButton)
 
 $stopButton = New-Object System.Windows.Forms.Button

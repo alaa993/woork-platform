@@ -4,11 +4,12 @@ import json
 from pathlib import Path
 
 from .models import AgentSettings
+from .paths import resolve_config_path
 
 
 def load_settings(config_path: str) -> AgentSettings:
-    path = Path(config_path)
-    data = json.loads(path.read_text())
+    path = resolve_config_path(config_path)
+    data = json.loads(path.read_text(encoding="utf-8"))
 
     return AgentSettings(
         cloud_base_url=data["cloud_base_url"].rstrip("/"),
