@@ -55,8 +55,16 @@
               @if(!empty($variant['artifact_size']))
                 <span>({{ number_format($variant['artifact_size'] / 1024 / 1024, 2) }} MB)</span>
               @endif
+              @if(!empty($variant['is_archive']))
+                <span class="rounded bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">ZIP fallback</span>
+              @endif
             </div>
-            <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $variant['description'] }}</div>
+            <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {{ $variant['description'] }}
+              @if(!empty($variant['is_archive']))
+                This package is an archive fallback because the installer EXE is not published yet.
+              @endif
+            </div>
           @endforeach
         </li>
         <li class="rounded-xl border border-slate-200/70 dark:border-white/10 p-4">

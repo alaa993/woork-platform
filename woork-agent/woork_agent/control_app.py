@@ -39,7 +39,8 @@ DEFAULT_CONFIG = {
 
 class WoorkControlApp:
     def __init__(self, config_path: str) -> None:
-        self.config_path = Path(config_path)
+        self.original_config_path = Path(config_path)
+        self.config_path = self._resolve_config_path(self.original_config_path)
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         self._ensure_config()
 
@@ -62,6 +63,35 @@ class WoorkControlApp:
         self._build_ui()
         self._refresh_status_loop()
 
+    def _resolve_config_path(self, config_path: Path) -> Path:
+        if self._is_writable_path(config_path):
+            return config_path
+
+        fallback_root = Path(os.getenv("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
+        fallback_path = fallback_root / "WoorkAgent" / "config.json"
+        fallback_path.parent.mkdir(parents=True, exist_ok=True)
+        return fallback_path
+
+    def _is_writable_path(self, config_path: Path) -> bool:
+        try:
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            probe_path = config_path.parent / ".woork-write-test"
+            probe_path.write_text("ok", encoding="utf-8")
+            probe_path.unlink(missing_ok=True)
+            return True
+        except OSError:
+            return False
+
+    def _default_config_payload(self) -> dict:
+        data = dict(DEFAULT_CONFIG)
+
+        if self.config_path != self.original_config_path:
+            base_dir = self.config_path.parent
+            data["state_path"] = str(base_dir / "agent-state.sqlite")
+            data["models_dir"] = str(base_dir / "models")
+
+        return data
+
     def run(self) -> None:
         self.root.mainloop()
 
@@ -73,7 +103,7 @@ class WoorkControlApp:
                 self.config_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
             return
 
-        self.config_path.write_text(json.dumps(DEFAULT_CONFIG, indent=2), encoding="utf-8")
+        self.config_path.write_text(json.dumps(self._default_config_payload(), indent=2), encoding="utf-8")
 
     def _load_config_to_vars(self) -> None:
         data = json.loads(self.config_path.read_text(encoding="utf-8"))
@@ -104,6 +134,11 @@ class WoorkControlApp:
         self._build_setup_tab(setup_tab)
         self._build_status_tab(status_tab)
         self._build_logs_tab(logs_tab)
+        if self.config_path != self.original_config_path:
+            self._log(
+                "ProgramData is not writable. Using local config at "
+                f"{self.config_path}"
+            )
 
     def _build_setup_tab(self, parent: Frame) -> None:
         rows = [

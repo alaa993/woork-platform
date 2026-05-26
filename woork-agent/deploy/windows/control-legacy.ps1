@@ -19,15 +19,43 @@ if ((Split-Path -Leaf $InstallDir) -ieq "scripts") {
     $InstallDir = Resolve-Path (Join-Path $InstallDir "..")
 }
 
-$ConfigDir = "C:\ProgramData\WoorkAgent"
-$ConfigPath = Join-Path $ConfigDir "config.json"
 $AgentExe = Join-Path $InstallDir "woork-agent.exe"
 $WinSwExe = Join-Path $InstallDir "WinSW-x64.exe"
 $ServiceXml = Join-Path $InstallDir "woork-agent-service.xml"
 
-if (-not (Test-Path $ConfigDir)) {
-    New-Item -ItemType Directory -Path $ConfigDir | Out-Null
+function Test-DirectoryWritable {
+    param([string]$Path)
+    try {
+        if (-not (Test-Path $Path)) {
+            New-Item -ItemType Directory -Path $Path -Force | Out-Null
+        }
+        $probe = Join-Path $Path ".woork-write-test"
+        [System.IO.File]::WriteAllText($probe, "ok")
+        Remove-Item $probe -Force -ErrorAction SilentlyContinue
+        return $true
+    } catch {
+        return $false
+    }
 }
+
+function Resolve-ConfigDir {
+    $programDataDir = "C:\ProgramData\WoorkAgent"
+    if (Test-DirectoryWritable $programDataDir) {
+        return $programDataDir
+    }
+
+    $localRoot = [Environment]::GetFolderPath("LocalApplicationData")
+    $localDir = Join-Path $localRoot "WoorkAgent"
+    if (-not (Test-DirectoryWritable $localDir)) {
+        throw "No writable configuration directory was found for Woork Agent Legacy."
+    }
+
+    return $localDir
+}
+
+$ConfigDir = Resolve-ConfigDir
+$ConfigPath = Join-Path $ConfigDir "config.json"
+$UsingLocalConfig = $ConfigDir -ne "C:\ProgramData\WoorkAgent"
 
 function Get-JsonStringValue {
     param([string]$Text, [string]$Key, [string]$Default)
@@ -53,6 +81,9 @@ function Write-AgentConfig {
         $DeviceUuid = "woork-" + ([guid]::NewGuid().ToString())
     }
     $CloudUrl = $CloudUrl.TrimEnd("/")
+    # Build Windows paths first, then escape once for JSON.
+    $statePath = Join-Path $ConfigDir "agent-state.sqlite"
+    $modelsDir = Join-Path $ConfigDir "models"
     $content = @"
 {
   "cloud_base_url": "$(Escape-JsonString $CloudUrl)",
@@ -60,8 +91,8 @@ function Write-AgentConfig {
   "device_uuid": "$(Escape-JsonString $DeviceUuid)",
   "os": "windows-7-legacy",
   "version": "1.0.0",
-  "state_path": "C:\\ProgramData\\WoorkAgent\\agent-state.sqlite",
-  "models_dir": "C:\\ProgramData\\WoorkAgent\\models",
+  "state_path": "$(Escape-JsonString $statePath)",
+  "models_dir": "$(Escape-JsonString $modelsDir)",
   "sync_interval_seconds": 60,
   "heartbeat_interval_seconds": 30,
   "runtime_loop_interval_seconds": 1.0,
@@ -258,4 +289,7 @@ $heartbeatButton.Add_Click({ Append-Output (Run-AgentCommand ("heartbeat --confi
 $form.Controls.Add($heartbeatButton)
 
 Append-Output "Woork Agent Legacy control is ready. Paste the pairing token, click Pair Device, then Start Service."
+if ($UsingLocalConfig) {
+    Append-Output "ProgramData is not writable. Using local config at $ConfigPath"
+}
 [void]$form.ShowDialog()

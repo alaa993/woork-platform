@@ -108,26 +108,39 @@ class AgentDevicesController extends Controller
 
         $stableReleases = AgentRelease::publishedStableByPlatform()->keyBy('platform');
         $fallbackArtifacts = [
-            'windows-x64' => 'downloads/woork-agent-windows-x64.zip',
-            'windows-x86' => 'downloads/woork-agent-windows-x86.zip',
-            'windows-7-legacy' => 'downloads/WoorkAgentSetup-LegacyWin7-1.0.0.exe',
+            'windows-x64' => [
+                'downloads/WoorkAgentSetup-1.0.0.exe',
+                'downloads/woork-agent-windows-x64.zip',
+            ],
+            'windows-x86' => [
+                'downloads/WoorkAgentSetup-x86-1.0.0.exe',
+                'downloads/woork-agent-windows-x86.zip',
+            ],
+            'windows-7-legacy' => [
+                'downloads/WoorkAgentSetup-LegacyWin7-1.0.0.exe',
+            ],
         ];
 
         $downloadVariants = collect(AgentRelease::supportedPlatforms())
             ->map(function (array $meta, string $platform) use ($stableReleases, $fallbackArtifacts) {
                 $release = $stableReleases->get($platform);
-                $fallbackPath = $fallbackArtifacts[$platform] ?? null;
-                $publicFallbackPath = $fallbackPath ? public_path($fallbackPath) : null;
-                $hasFallbackArtifact = $publicFallbackPath && file_exists($publicFallbackPath);
-                $artifactPath = $release?->artifact_path ?? ($hasFallbackArtifact ? $fallbackPath : null);
+                $fallbackPath = collect($fallbackArtifacts[$platform] ?? [])
+                    ->first(fn (string $candidate) => file_exists(public_path($candidate)));
+                $artifactPath = $release?->artifact_path;
+
+                if ($artifactPath && ! file_exists(public_path($artifactPath))) {
+                    $artifactPath = null;
+                }
+
+                $artifactPath ??= $fallbackPath;
 
                 if (! $artifactPath) {
                     return null;
                 }
 
                 $artifactSize = $release?->artifact_size;
-                if (! $artifactSize && $hasFallbackArtifact) {
-                    $artifactSize = filesize($publicFallbackPath);
+                if (! $artifactSize && file_exists(public_path($artifactPath))) {
+                    $artifactSize = filesize(public_path($artifactPath));
                 }
 
                 return [
@@ -136,8 +149,10 @@ class AgentDevicesController extends Controller
                     'description' => $meta['description'],
                     'download_url' => asset($artifactPath),
                     'artifact_path' => $artifactPath,
+                    'artifact_name' => basename($artifactPath),
                     'artifact_size' => $artifactSize,
                     'release' => $release,
+                    'is_archive' => Str::endsWith(strtolower($artifactPath), '.zip'),
                     'is_legacy' => $platform === 'windows-7-legacy',
                     'is_primary' => $platform === 'windows-x64',
                 ];
