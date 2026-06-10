@@ -101,9 +101,16 @@ function Get-AgentServiceTemplateXml {
 }
 
 function Get-AgentServiceRuntimeXml {
-    param([string]$InstallDir)
+    param(
+        [string]$InstallDir,
+        [string]$ConfigPath
+    )
 
-    return Join-Path $InstallDir "woork-agent-service.runtime.xml"
+    if ($ConfigPath) {
+        return Join-Path (Split-Path -Parent $ConfigPath) "woork-agent-service.runtime.xml"
+    }
+
+    return Join-Path (Get-AgentConfigDirectory) "woork-agent-service.runtime.xml"
 }
 
 function New-AgentServiceRuntimeXml {
@@ -113,7 +120,12 @@ function New-AgentServiceRuntimeXml {
     )
 
     $templatePath = Get-AgentServiceTemplateXml -InstallDir $InstallDir
-    $runtimePath = Get-AgentServiceRuntimeXml -InstallDir $InstallDir
+    $runtimePath = Get-AgentServiceRuntimeXml -InstallDir $InstallDir -ConfigPath $ConfigPath
+    $runtimeDir = Split-Path -Parent $runtimePath
+    if (-not (Test-Path $runtimeDir)) {
+        New-Item -ItemType Directory -Path $runtimeDir -Force | Out-Null
+    }
+
     $content = [System.IO.File]::ReadAllText($templatePath)
     $escapedConfig = [System.Security.SecurityElement]::Escape($ConfigPath)
     $content = [regex]::Replace(
@@ -125,6 +137,12 @@ function New-AgentServiceRuntimeXml {
     return $runtimePath
 }
 
+function Test-AgentIsAdministrator {
+    $current = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($current)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
 function Sync-AgentServiceConfig {
     param(
         [string]$InstallDir,
@@ -134,6 +152,11 @@ function Sync-AgentServiceConfig {
 
     Initialize-AgentConfigDirectory -ConfigPath $ConfigPath
     $runtimeXml = New-AgentServiceRuntimeXml -InstallDir $InstallDir -ConfigPath $ConfigPath
+
+    if (-not (Test-AgentIsAdministrator)) {
+        throw "Runtime service config saved to $runtimeXml, but installing or starting the Windows service requires Administrator rights. Close this window, right-click Woork Agent Legacy, and choose Run as administrator."
+    }
+
     $winSw = Get-AgentWinSwExecutable -InstallDir $InstallDir
 
     $service = Get-Service -Name "woork-agent" -ErrorAction SilentlyContinue
@@ -145,9 +168,15 @@ function Sync-AgentServiceConfig {
     }
 
     & $winSw install $runtimeXml
+    if ($LASTEXITCODE -ne 0) {
+        throw "WinSW failed to install the service using $runtimeXml"
+    }
 
     if ($RestartService -or $wasRunning) {
         & $winSw start $runtimeXml
+        if ($LASTEXITCODE -ne 0) {
+            throw "WinSW failed to start the service using $runtimeXml"
+        }
     }
 
     return $runtimeXml

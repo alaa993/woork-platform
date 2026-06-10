@@ -56,7 +56,7 @@ function Get-Win7PrerequisiteReport {
         [PSCustomObject]@{
             Name = "Update KB2533623"
             Ok = (Test-Win7UpdateKb2533623)
-            Fix = "Install KB2533623 (required for Python on Windows 7), then reboot."
+            Fix = "Install KB2533623 from https://www.catalog.update.microsoft.com/Search.aspx?q=KB2533623 then reboot."
         },
         [PSCustomObject]@{
             Name = "VC++ 2015-2019 runtime (vcruntime140.dll)"
@@ -86,13 +86,13 @@ function Get-Win7SocketFailureHint {
     return @(
         "Woork Agent could not load Python networking (_socket).",
         "",
-        "This Legacy build must be installed from WoorkAgentSetup-LegacyWin7-*.exe",
-        "(not the standard Windows 10/11 installer).",
+        "Install Windows 7 update KB2533623, then reboot:",
+        "https://www.catalog.update.microsoft.com/Search.aspx?q=KB2533623",
         "",
-        "On Windows 7 SP1 also install:",
-        "  1) KB2533623",
-        "  2) Microsoft Visual C++ 2015-2019 Redistributable (x64)",
+        "Also confirm you used WoorkAgentSetup-LegacyWin7-*.exe",
+        "and that VC++ 2015-2019 Redistributable (x64) is installed.",
         "",
-        "Reboot after installing updates, then click Test Agent again."
+        "After reboot, right-click Woork Agent Legacy and Run as administrator,",
+        "then click Test Agent again."
     ) -join "`r`n"
 }

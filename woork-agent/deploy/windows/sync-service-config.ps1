@@ -16,6 +16,10 @@ if (-not (Test-Path $SharedScript)) {
 . $SharedScript
 
 $resolvedInstallDir = Resolve-Path $InstallDir
-$resolvedConfigPath = (Resolve-Path $ConfigPath).Path
+if (Test-Path $ConfigPath) {
+    $resolvedConfigPath = (Resolve-Path $ConfigPath).Path
+} else {
+    $resolvedConfigPath = $ConfigPath
+}
 
 Sync-AgentServiceConfig -InstallDir $resolvedInstallDir -ConfigPath $resolvedConfigPath -RestartService:$RestartService

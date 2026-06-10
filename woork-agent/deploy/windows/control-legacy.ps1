@@ -53,11 +53,26 @@ function Update-ServiceConfig {
 }
 
 function Get-ServiceXmlPath {
-    $runtimeXml = Get-AgentServiceRuntimeXml -InstallDir $InstallDir
+    $runtimeXml = Get-AgentServiceRuntimeXml -InstallDir $InstallDir -ConfigPath $ConfigPath
     if (Test-Path $runtimeXml) {
         return $runtimeXml
     }
     return (Get-AgentServiceTemplateXml -InstallDir $InstallDir)
+}
+
+function Test-Win7RuntimeReady {
+    if (Get-Command Get-Win7PrerequisiteReport -ErrorAction SilentlyContinue) {
+        $failed = @(Get-Win7PrerequisiteReport -InstallDir $InstallDir | Where-Object { -not $_.Ok })
+        if ($failed.Count -gt 0) {
+            return (Format-Win7PrerequisiteReport -Checks (Get-Win7PrerequisiteReport -InstallDir $InstallDir))
+        }
+    }
+
+    $result = Run-AgentCommand "preflight"
+    if ($result -match '"ok"\s*:\s*true') {
+        return $null
+    }
+    return (Format-AgentFailure $result)
 }
 
 function Get-JsonStringValue {
@@ -291,6 +306,11 @@ $pairButton.Text = "Pair Device"
 $pairButton.Location = New-Object System.Drawing.Point(132, 124)
 $pairButton.Size = New-Object System.Drawing.Size(105, 30)
 $pairButton.Add_Click({
+    $runtimeIssue = Test-Win7RuntimeReady
+    if ($runtimeIssue) {
+        Append-Output $runtimeIssue
+        return
+    }
     $current = Load-AgentConfig
     Write-AgentConfig $cloudInput.Text $nameInput.Text $current.DeviceUuid
     if ([string]::IsNullOrEmpty($tokenInput.Text)) {
@@ -312,6 +332,11 @@ $startButton.Text = "Start Service"
 $startButton.Location = New-Object System.Drawing.Point(248, 124)
 $startButton.Size = New-Object System.Drawing.Size(105, 30)
 $startButton.Add_Click({
+    $runtimeIssue = Test-Win7RuntimeReady
+    if ($runtimeIssue) {
+        Append-Output $runtimeIssue
+        return
+    }
     $syncMessage = Update-ServiceConfig
     if ($syncMessage) {
         Append-Output "Could not synchronize service config: $syncMessage"
