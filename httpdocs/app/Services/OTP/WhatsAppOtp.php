@@ -70,11 +70,21 @@ protected function dispatch(string $phone, string $text): bool
             'lang'      => $lang,
         ];
 
-        $resp = \Illuminate\Support\Facades\Http::withHeaders([
-            'Authorization' => 'Bearer '.$token,
-            'Accept'        => 'application/json',
-            'Content-Type'  => 'application/json',
-        ])->post($url, $payload);
+        try {
+            $resp = Http::withHeaders([
+                'Authorization' => 'Bearer '.$token,
+                'Accept'        => 'application/json',
+                'Content-Type'  => 'application/json',
+            ])->post($url, $payload);
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            Log::error('StandingTech send failed', [
+                'status' => $e->response?->status(),
+                'body'   => $e->response?->body(),
+                'payload'=> $payload,
+            ]);
+
+            return false;
+        }
 
         if ($resp->successful()) {
             return true;

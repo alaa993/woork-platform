@@ -20,6 +20,7 @@ return [
     'lang.tr'            => 'Turkish',
 
     'plan'               => 'Plan',
+    'no_plans'           => 'Registration is temporarily unavailable. Please contact support.',
     'agree'              => 'I agree to the Terms',
     'submit'             => 'Send OTP & Continue',
 

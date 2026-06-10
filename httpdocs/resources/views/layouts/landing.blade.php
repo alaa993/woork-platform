@@ -98,6 +98,10 @@
             </div>
 
             <a href="{{ route('login') }}"
+               class="rounded-lg border px-4 py-2 text-center dark:border-white/10">
+              {{ __('auth.login.title') }}
+            </a>
+            <a href="{{ route('signup') }}"
                class="woork-btn-primary rounded-lg bg-emerald-600 text-white px-4 py-2 text-center">
               {{ __('public.nav.start') }}
             </a>
@@ -116,9 +120,9 @@
                 border-t border-slate-200/70 dark:border-white/10">
       <div>©️ {{ date('Y') }} Woork</div>
       <div class="flex gap-6">
-        <a href="/privacy">{{ __('public.footer.privacy') }}</a>
-        <a href="/terms">{{ __('public.footer.terms') }}</a>
-        <a href="/contact">{{ __('public.footer.contact') }}</a>
+        <a href="{{ route('privacy') }}">{{ __('public.footer.privacy') }}</a>
+        <a href="{{ route('terms') }}">{{ __('public.footer.terms') }}</a>
+        <a href="{{ route('contact') }}">{{ __('public.footer.contact') }}</a>
       </div>
     </div>
   </footer>

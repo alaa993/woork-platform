@@ -7,6 +7,7 @@ return [
     'phone_ph' => 'örn. +90 555 000 00 00',
     'send_otp' => 'OTP gönder',
     'note' => 'Numaranızı yalnızca kimlik doğrulama için kullanıyoruz; pazarlama yok.',
+    'no_account' => 'Hesabınız yok mu?',
     'verify_title' => 'OTP kodunu girin',
     'code' => 'Doğrulama kodu',
     'verify' => 'Doğrula ve devam et',
@@ -15,5 +16,6 @@ return [
   ],
   'errors' => [
     'invalid_otp' => 'Geçersiz veya süresi geçmiş kod. Lütfen tekrar deneyin.',
+    'otp_send_failed' => 'WhatsApp üzerinden OTP gönderilemedi. Numarayı kontrol edip tekrar deneyin.',
   ],
 ];

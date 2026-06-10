@@ -20,6 +20,7 @@ return [
     'lang.tr'            => 'Türkçe',
 
     'plan'               => 'Paket',
+    'no_plans'           => 'Kayıt geçici olarak kullanılamıyor. Lütfen destek ile iletişime geçin.',
     'agree'              => 'Şartları kabul ediyorum',
     'submit'             => 'OTP Gönder ve Devam Et',
 

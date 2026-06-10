@@ -28,6 +28,14 @@ if (-not (Test-Path $SharedScript)) {
     throw "Missing agent-config-paths.ps1 beside the Legacy installer."
 }
 
+$PrereqScript = Join-Path $InstallDir "scripts\win7-prerequisites.ps1"
+if (-not (Test-Path $PrereqScript)) {
+    $PrereqScript = Join-Path $InstallDir "win7-prerequisites.ps1"
+}
+if (Test-Path $PrereqScript) {
+    . $PrereqScript
+}
+
 . $SharedScript
 
 $ConfigPath = Get-AgentConfigPath -PreferredPath (Join-Path (Get-AgentProgramDataDir) "config.json")
@@ -118,6 +126,36 @@ function Load-AgentConfig {
     }
 }
 
+function Format-AgentFailure {
+    param([string]$Text)
+    if ($Text -match "_socket|ImportError: DLL load failed") {
+        if (Get-Command Get-Win7SocketFailureHint -ErrorAction SilentlyContinue) {
+            return (Get-Win7SocketFailureHint)
+        }
+    }
+    return $Text
+}
+
+function Test-AgentRuntime {
+    if (-not (Test-Path $AgentExe)) {
+        return "woork-agent.exe was not found: $AgentExe"
+    }
+
+    if (Get-Command Get-Win7PrerequisiteReport -ErrorAction SilentlyContinue) {
+        $checks = Get-Win7PrerequisiteReport -InstallDir $InstallDir
+        $failed = @($checks | Where-Object { -not $_.Ok })
+        if ($failed.Count -gt 0) {
+            return (Format-Win7PrerequisiteReport -Checks $checks)
+        }
+    }
+
+    $result = Run-AgentCommand "preflight"
+    if ($result -match '"ok"\s*:\s*true') {
+        return "Agent runtime OK. Networking modules loaded successfully."
+    }
+    return (Format-AgentFailure $result)
+}
+
 function Run-AgentCommand {
     param([string]$Arguments)
     if (-not (Test-Path $AgentExe)) {
@@ -138,10 +176,10 @@ function Run-AgentCommand {
     $stderr = $process.StandardError.ReadToEnd()
     $process.WaitForExit()
     if ($stderr) {
-        return ($stdout + "`r`n" + $stderr).Trim()
+        return (Format-AgentFailure ($stdout + "`r`n" + $stderr).Trim())
     }
     if ($stdout) {
-        return $stdout.Trim()
+        return (Format-AgentFailure $stdout.Trim())
     }
     return "Command completed."
 }
@@ -178,7 +216,7 @@ $config = Load-AgentConfig
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Woork Agent Legacy"
-$form.Size = New-Object System.Drawing.Size(720, 560)
+$form.Size = New-Object System.Drawing.Size(720, 590)
 $form.StartPosition = "CenterScreen"
 
 $font = New-Object System.Drawing.Font("Segoe UI", 9)
@@ -221,7 +259,7 @@ $form.Controls.Add($tokenInput)
 
 $output = New-Object System.Windows.Forms.TextBox
 $output.Location = New-Object System.Drawing.Point(16, 170)
-$output.Size = New-Object System.Drawing.Size(664, 330)
+$output.Size = New-Object System.Drawing.Size(664, 300)
 $output.Multiline = $true
 $output.ScrollBars = "Vertical"
 $output.ReadOnly = $true
@@ -304,7 +342,17 @@ $heartbeatButton.Size = New-Object System.Drawing.Size(108, 30)
 $heartbeatButton.Add_Click({ Append-Output (Run-AgentCommand ("heartbeat --config `"$ConfigPath`"")) })
 $form.Controls.Add($heartbeatButton)
 
-Append-Output "Woork Agent Legacy control is ready. Paste the pairing token, click Pair Device, then Start Service."
+$testButton = New-Object System.Windows.Forms.Button
+$testButton.Text = "Test Agent"
+$testButton.Location = New-Object System.Drawing.Point(16, 154)
+$testButton.Size = New-Object System.Drawing.Size(664, 30)
+$testButton.Add_Click({ Append-Output (Test-AgentRuntime) })
+$form.Controls.Add($testButton)
+
+Append-Output "Woork Agent Legacy control is ready. Click Test Agent, paste the pairing token, click Pair Device, then Start Service."
+if (Get-Command Get-Win7PrerequisiteReport -ErrorAction SilentlyContinue) {
+    Append-Output (Format-Win7PrerequisiteReport -Checks (Get-Win7PrerequisiteReport -InstallDir $InstallDir))
+}
 if ($UsingLocalConfig) {
     Append-Output "ProgramData is not writable. Using local config at $ConfigPath"
 }

@@ -36,8 +36,14 @@ Woork Agent should be distributed as platform-specific builds, not as a single
 
 ## Windows 7 runtime notes
 
-- Use Windows 7 SP1.
-- Ensure `KB2533623` is installed.
-- If `_socket` fails to load at startup, the legacy package was likely built
-  with the wrong Python version or the target PC is missing the required system
-  update.
+- Use Windows 7 SP1 x64.
+- Install **KB2533623** (required for Python DLL loading on Windows 7).
+- Install **Microsoft Visual C++ 2015-2019 Redistributable (x64)**.
+- The legacy installer ships a **onedir** agent bundle (`dist/woork-agent/`), not a
+  single-file executable. This avoids common `_socket` / DLL extraction failures on
+  Windows 7.
+- Open **Woork Agent Legacy** and click **Test Agent** before pairing. The control
+  panel checks SP1, KB2533623, VC++ runtime, and loads Python networking modules.
+- If `_socket` fails to load at startup, the legacy package was likely built with
+  the wrong Python version, the standard Win10/11 installer was used by mistake, or
+  the target PC is missing KB2533623 / the VC++ runtime.
