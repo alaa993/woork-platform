@@ -1,11 +1,16 @@
 # PyInstaller spec for Windows 7 legacy builds.
 # Use with Python 3.8.x only. Prefer onedir (not onefile) for Win7 DLL loading.
 
+import os
+
 block_cipher = None
 
+agent_root = os.path.abspath(os.path.join(SPECPATH, '..', '..'))
+entry_script = os.path.join(agent_root, 'agent_entry.py')
+
 a = Analysis(
-    ['agent_entry.py'],
-    pathex=[],
+    [entry_script],
+    pathex=[agent_root],
     binaries=[],
     datas=[],
     hiddenimports=[
