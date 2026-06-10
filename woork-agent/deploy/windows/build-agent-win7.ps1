@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $BaseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AgentRoot = Resolve-Path (Join-Path $BaseDir "..\..")
-$SpecFile = Join-Path $BaseDir "woork-agent-win7.spec"
+$EntryScript = Join-Path $AgentRoot "agent_entry.py"
 $DistDir = Join-Path $AgentRoot "dist\woork-agent"
 $BuildDir = Join-Path $AgentRoot "build\woork-agent"
 $PythonVersion = [System.Version]::Parse((& python -c "import sys; print('.'.join(map(str, sys.version_info[:3])))"))
@@ -10,6 +10,10 @@ $PythonArch = if ([Environment]::Is64BitProcess) { "x64" } else { "x86" }
 
 if ($PythonVersion.Major -ne 3 -or $PythonVersion.Minor -ne 8) {
     throw "Windows 7 legacy builds must be produced with Python 3.8.x exactly. Current Python version is $PythonVersion."
+}
+
+if (-not (Test-Path $EntryScript)) {
+    throw "Entry script not found: $EntryScript"
 }
 
 Set-Location $AgentRoot
@@ -26,12 +30,27 @@ if (Test-Path $BuildDir) {
 }
 
 pyinstaller `
+  --name woork-agent `
+  --onedir `
   --clean `
   --noconfirm `
-  --distpath (Join-Path $AgentRoot "dist") `
-  --workpath (Join-Path $AgentRoot "build") `
-  --specpath $BaseDir `
-  $SpecFile
+  --exclude-module multiprocessing `
+  --exclude-module cv2 `
+  --exclude-module numpy `
+  --exclude-module tkinter `
+  --exclude-module _tkinter `
+  --hidden-import socket `
+  --hidden-import _socket `
+  --hidden-import ssl `
+  --hidden-import _ssl `
+  --hidden-import select `
+  --hidden-import sqlite3 `
+  --collect-all woork_agent `
+  $EntryScript
+
+if ($LASTEXITCODE -ne 0) {
+    throw "PyInstaller failed with exit code $LASTEXITCODE."
+}
 
 $AgentExe = Join-Path $DistDir "woork-agent.exe"
 if (-not (Test-Path $AgentExe)) {
