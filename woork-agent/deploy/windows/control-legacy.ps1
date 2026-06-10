@@ -20,42 +20,45 @@ if ((Split-Path -Leaf $InstallDir) -ieq "scripts") {
 }
 
 $AgentExe = Join-Path $InstallDir "woork-agent.exe"
-$WinSwExe = Join-Path $InstallDir "WinSW-x64.exe"
-$ServiceXml = Join-Path $InstallDir "woork-agent-service.xml"
+$SharedScript = Join-Path $InstallDir "scripts\agent-config-paths.ps1"
+if (-not (Test-Path $SharedScript)) {
+    $SharedScript = Join-Path $InstallDir "agent-config-paths.ps1"
+}
+if (-not (Test-Path $SharedScript)) {
+    throw "Missing agent-config-paths.ps1 beside the Legacy installer."
+}
 
-function Test-DirectoryWritable {
-    param([string]$Path)
+$PrereqScript = Join-Path $InstallDir "scripts\win7-prerequisites.ps1"
+if (-not (Test-Path $PrereqScript)) {
+    $PrereqScript = Join-Path $InstallDir "win7-prerequisites.ps1"
+}
+if (Test-Path $PrereqScript) {
+    . $PrereqScript
+}
+
+. $SharedScript
+
+$ConfigPath = Get-AgentConfigPath -PreferredPath (Join-Path (Get-AgentProgramDataDir) "config.json")
+$ConfigDir = Split-Path -Parent $ConfigPath
+$UsingLocalConfig = $ConfigDir -ne (Get-AgentProgramDataDir)
+
+function Update-ServiceConfig {
+    param([switch]$RestartService)
     try {
-        if (-not (Test-Path $Path)) {
-            New-Item -ItemType Directory -Path $Path -Force | Out-Null
-        }
-        $probe = Join-Path $Path ".woork-write-test"
-        [System.IO.File]::WriteAllText($probe, "ok")
-        Remove-Item $probe -Force -ErrorAction SilentlyContinue
-        return $true
+        Sync-AgentServiceConfig -InstallDir $InstallDir -ConfigPath $ConfigPath -RestartService:$RestartService
     } catch {
-        return $false
+        return $_.Exception.Message
     }
+    return $null
 }
 
-function Resolve-ConfigDir {
-    $programDataDir = "C:\ProgramData\WoorkAgent"
-    if (Test-DirectoryWritable $programDataDir) {
-        return $programDataDir
+function Get-ServiceXmlPath {
+    $runtimeXml = Get-AgentServiceRuntimeXml -InstallDir $InstallDir
+    if (Test-Path $runtimeXml) {
+        return $runtimeXml
     }
-
-    $localRoot = [Environment]::GetFolderPath("LocalApplicationData")
-    $localDir = Join-Path $localRoot "WoorkAgent"
-    if (-not (Test-DirectoryWritable $localDir)) {
-        throw "No writable configuration directory was found for Woork Agent Legacy."
-    }
-
-    return $localDir
+    return (Get-AgentServiceTemplateXml -InstallDir $InstallDir)
 }
-
-$ConfigDir = Resolve-ConfigDir
-$ConfigPath = Join-Path $ConfigDir "config.json"
-$UsingLocalConfig = $ConfigDir -ne "C:\ProgramData\WoorkAgent"
 
 function Get-JsonStringValue {
     param([string]$Text, [string]$Key, [string]$Default)
@@ -123,6 +126,36 @@ function Load-AgentConfig {
     }
 }
 
+function Format-AgentFailure {
+    param([string]$Text)
+    if ($Text -match "_socket|ImportError: DLL load failed") {
+        if (Get-Command Get-Win7SocketFailureHint -ErrorAction SilentlyContinue) {
+            return (Get-Win7SocketFailureHint)
+        }
+    }
+    return $Text
+}
+
+function Test-AgentRuntime {
+    if (-not (Test-Path $AgentExe)) {
+        return "woork-agent.exe was not found: $AgentExe"
+    }
+
+    if (Get-Command Get-Win7PrerequisiteReport -ErrorAction SilentlyContinue) {
+        $checks = Get-Win7PrerequisiteReport -InstallDir $InstallDir
+        $failed = @($checks | Where-Object { -not $_.Ok })
+        if ($failed.Count -gt 0) {
+            return (Format-Win7PrerequisiteReport -Checks $checks)
+        }
+    }
+
+    $result = Run-AgentCommand "preflight"
+    if ($result -match '"ok"\s*:\s*true') {
+        return "Agent runtime OK. Networking modules loaded successfully."
+    }
+    return (Format-AgentFailure $result)
+}
+
 function Run-AgentCommand {
     param([string]$Arguments)
     if (-not (Test-Path $AgentExe)) {
@@ -143,22 +176,25 @@ function Run-AgentCommand {
     $stderr = $process.StandardError.ReadToEnd()
     $process.WaitForExit()
     if ($stderr) {
-        return ($stdout + "`r`n" + $stderr).Trim()
+        return (Format-AgentFailure ($stdout + "`r`n" + $stderr).Trim())
     }
     if ($stdout) {
-        return $stdout.Trim()
+        return (Format-AgentFailure $stdout.Trim())
     }
     return "Command completed."
 }
 
 function Run-ServiceCommand {
     param([string]$Command)
-    if (-not (Test-Path $WinSwExe)) {
-        return "WinSW-x64.exe was not found: $WinSwExe"
+    try {
+        $winSwExe = Get-AgentWinSwExecutable -InstallDir $InstallDir
+        $serviceXml = Get-ServiceXmlPath
+    } catch {
+        return $_.Exception.Message
     }
     $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = $WinSwExe
-    $psi.Arguments = "$Command `"$ServiceXml`""
+    $psi.FileName = $winSwExe
+    $psi.Arguments = "$Command `"$serviceXml`""
     $psi.WorkingDirectory = $InstallDir
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
@@ -180,7 +216,7 @@ $config = Load-AgentConfig
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Woork Agent Legacy"
-$form.Size = New-Object System.Drawing.Size(720, 560)
+$form.Size = New-Object System.Drawing.Size(720, 590)
 $form.StartPosition = "CenterScreen"
 
 $font = New-Object System.Drawing.Font("Segoe UI", 9)
@@ -223,7 +259,7 @@ $form.Controls.Add($tokenInput)
 
 $output = New-Object System.Windows.Forms.TextBox
 $output.Location = New-Object System.Drawing.Point(16, 170)
-$output.Size = New-Object System.Drawing.Size(664, 330)
+$output.Size = New-Object System.Drawing.Size(664, 300)
 $output.Multiline = $true
 $output.ScrollBars = "Vertical"
 $output.ReadOnly = $true
@@ -241,7 +277,12 @@ $saveButton.Size = New-Object System.Drawing.Size(105, 30)
 $saveButton.Add_Click({
     $current = Load-AgentConfig
     Write-AgentConfig $cloudInput.Text $nameInput.Text $current.DeviceUuid
-    Append-Output "Settings saved."
+    $syncMessage = Update-ServiceConfig
+    if ($syncMessage) {
+        Append-Output "Settings saved, but service config sync failed: $syncMessage"
+    } else {
+        Append-Output "Settings saved and service config synchronized."
+    }
 })
 $form.Controls.Add($saveButton)
 
@@ -257,6 +298,12 @@ $pairButton.Add_Click({
         return
     }
     Append-Output (Run-AgentCommand ("pair --config `"$ConfigPath`" --pairing-token `"" + $tokenInput.Text + "`""))
+    $syncMessage = Update-ServiceConfig
+    if ($syncMessage) {
+        Append-Output "Pairing command sent, but service config sync failed: $syncMessage"
+    } else {
+        Append-Output "Service config synchronized for the paired device."
+    }
 })
 $form.Controls.Add($pairButton)
 
@@ -264,7 +311,14 @@ $startButton = New-Object System.Windows.Forms.Button
 $startButton.Text = "Start Service"
 $startButton.Location = New-Object System.Drawing.Point(248, 124)
 $startButton.Size = New-Object System.Drawing.Size(105, 30)
-$startButton.Add_Click({ Append-Output (Run-ServiceCommand "start") })
+$startButton.Add_Click({
+    $syncMessage = Update-ServiceConfig
+    if ($syncMessage) {
+        Append-Output "Could not synchronize service config: $syncMessage"
+        return
+    }
+    Append-Output (Run-ServiceCommand "start")
+})
 $form.Controls.Add($startButton)
 
 $stopButton = New-Object System.Windows.Forms.Button
@@ -288,7 +342,17 @@ $heartbeatButton.Size = New-Object System.Drawing.Size(108, 30)
 $heartbeatButton.Add_Click({ Append-Output (Run-AgentCommand ("heartbeat --config `"$ConfigPath`"")) })
 $form.Controls.Add($heartbeatButton)
 
-Append-Output "Woork Agent Legacy control is ready. Paste the pairing token, click Pair Device, then Start Service."
+$testButton = New-Object System.Windows.Forms.Button
+$testButton.Text = "Test Agent"
+$testButton.Location = New-Object System.Drawing.Point(16, 154)
+$testButton.Size = New-Object System.Drawing.Size(664, 30)
+$testButton.Add_Click({ Append-Output (Test-AgentRuntime) })
+$form.Controls.Add($testButton)
+
+Append-Output "Woork Agent Legacy control is ready. Click Test Agent, paste the pairing token, click Pair Device, then Start Service."
+if (Get-Command Get-Win7PrerequisiteReport -ErrorAction SilentlyContinue) {
+    Append-Output (Format-Win7PrerequisiteReport -Checks (Get-Win7PrerequisiteReport -InstallDir $InstallDir))
+}
 if ($UsingLocalConfig) {
     Append-Output "ProgramData is not writable. Using local config at $ConfigPath"
 }

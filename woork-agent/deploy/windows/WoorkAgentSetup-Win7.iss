@@ -32,10 +32,13 @@ Name: "{commonappdata}\WoorkAgent\logs"
 Name: "{commonappdata}\WoorkAgent\models"
 
 [Files]
-Source: "..\..\dist\woork-agent.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\dist\woork-agent\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\windows\config.production.json"; DestDir: "{commonappdata}\WoorkAgent"; DestName: "config.json"; Flags: onlyifdoesntexist
 Source: "..\winsw\woork-agent-service.xml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\winsw\WinSW-x64.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\windows\agent-config-paths.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
+Source: "..\windows\sync-service-config.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
+Source: "..\windows\win7-prerequisites.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "..\windows\install-service.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "..\windows\uninstall-service.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "..\windows\control-legacy.ps1"; DestDir: "{app}"; Flags: ignoreversion

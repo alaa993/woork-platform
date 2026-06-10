@@ -30,6 +30,11 @@
     <p class="text-xs text-slate-500 mt-3 text-center">
       {{ __('auth.login.note') }}
     </p>
+
+    <p class="text-sm text-center mt-4">
+      {{ __('auth.login.no_account') }}
+      <a href="{{ route('signup') }}" class="text-emerald-600 hover:underline">{{ __('public.nav.start') }}</a>
+    </p>
   </div>
 </div>
 @endsection

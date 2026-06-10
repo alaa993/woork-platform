@@ -64,14 +64,18 @@
 
       <div class="md:col-span-2">
         <label class="block text-sm mb-1">{{ __('signup.plan') }}</label>
-        <div class="flex flex-wrap gap-3">
-          @foreach($plans as $p)
-            <label class="flex items-center gap-2 rounded-xl border border-slate-300 dark:border-white/10 px-3 py-2">
-              <input type="radio" name="plan" value="{{ $p->slug }}" {{ old('plan','starter')===$p->slug?'checked':'' }}>
-              <span class="text-sm">{{ $p->name }}</span>
-            </label>
-          @endforeach
-        </div>
+        @if($plans->isEmpty())
+          <p class="text-sm text-red-600">{{ __('signup.no_plans') }}</p>
+        @else
+          <div class="flex flex-wrap gap-3">
+            @foreach($plans as $p)
+              <label class="flex items-center gap-2 rounded-xl border border-slate-300 dark:border-white/10 px-3 py-2">
+                <input type="radio" name="plan" value="{{ $p->slug }}" {{ old('plan', $plans->first()->slug) === $p->slug ? 'checked' : '' }} required>
+                <span class="text-sm">{{ $p->name }}</span>
+              </label>
+            @endforeach
+          </div>
+        @endif
       </div>
 
       <div class="md:col-span-2 flex items-center gap-2">
@@ -80,7 +84,8 @@
       </div>
 
       <div class="md:col-span-2">
-        <button class="woork-btn-primary w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2">
+        <button class="woork-btn-primary w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                @if($plans->isEmpty()) disabled @endif>
           {{ __('signup.submit') }}
         </button>
       </div>

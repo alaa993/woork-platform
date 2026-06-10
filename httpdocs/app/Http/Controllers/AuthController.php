@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\{User, Organization, Plan, Subscription};
+use App\Models\User;
+use App\Services\OrganizationProvisioningService;
 use App\Services\OTP\WhatsAppOtp;
 
 class AuthController extends Controller
@@ -25,8 +26,11 @@ class AuthController extends Controller
         $phone = $otp->normalizePhone($r->phone);
         $isExisting = User::where('phone', $phone)->exists();
 
-        // نرسل الكود (لا نعتمد على قيمة الإرجاع)
-        $otp->send($phone);
+        if (! $otp->send($phone)) {
+            return back()
+                ->withInput()
+                ->withErrors(['phone' => __('auth.errors.otp_send_failed')]);
+        }
 
         $status = $isExisting ? 'OTP sent to your existing account.' : 'OTP sent to WhatsApp';
 
@@ -36,7 +40,7 @@ class AuthController extends Controller
     }
 
     // التحقق من الكود
-    public function verifyOtp(Request $r, WhatsAppOtp $otp)
+    public function verifyOtp(Request $r, WhatsAppOtp $otp, OrganizationProvisioningService $provisioning)
     {
         $r->validate([
             'phone' => ['required','string'],
@@ -51,26 +55,14 @@ class AuthController extends Controller
 
         // لو المستخدم موجود برقم الهاتف → سجّل دخوله
         if ($user = User::where('phone', $phone)->first()) {
-            if (!$user->organization_id) {
-                $plan = Plan::where('slug', 'starter')->first() ?? Plan::first();
-                $trialEndsAt = Subscription::trialEndsAtFor($plan);
-                $org = Organization::create([
-                    'name' => $user->name ?: 'Woork customer',
-                    'language' => $user->language ?: app()->getLocale(),
-                    'plan_id' => $plan?->id,
-                    'owner_user_id' => $user->id,
-                ]);
-                Subscription::create([
-                    'organization_id' => $org->id,
-                    'plan_id' => $plan?->id,
-                    'status' => 'trial',
-                    'trial_ends_at' => $trialEndsAt,
-                    'current_period_end' => $trialEndsAt,
-                ]);
-                $user->organization_id = $org->id;
-                $user->save();
-            }
-            Auth::login($user, true);
+            $provisioning->ensureWorkspace(
+                $user,
+                $user->name ? ($user->name.' Workspace') : 'Woork customer',
+                null,
+                'company',
+                $user->language ?: app()->getLocale(),
+            );
+            Auth::login($user->fresh(), true);
             return redirect()->route('app');
         }
 

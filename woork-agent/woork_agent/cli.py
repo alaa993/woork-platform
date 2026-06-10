@@ -5,6 +5,7 @@ import json
 
 from .diagnostics import print_json, run_benchmark, run_doctor
 from .model_registry import inspect_models
+from .paths import resolve_config_path
 from .runtime import AgentRuntime, setup_logging
 
 
@@ -57,7 +58,8 @@ def main() -> None:
     args = parser.parse_args()
     setup_logging(args.verbose)
 
-    runtime = AgentRuntime(args.config)
+    config_path = str(resolve_config_path(args.config))
+    runtime = AgentRuntime(config_path)
 
     if args.command == "pair":
         runtime.pair(args.pairing_token)

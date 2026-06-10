@@ -7,7 +7,7 @@ use App\Http\Controllers\{
     EmployeesController, AlertsController, PoliciesController, SubscriptionController,
     SettingsController, StripeWebhookController, AdminController, BillingController, ExportController,
     RegisterController, ProfileController, AgentDevicesController, CameraHealthController, AgentReleasesController,
-    ReportsController, OnboardingController, LaunchReadinessController
+    ReportsController, OnboardingController, LaunchReadinessController, PublicPagesController
 };
 
 
@@ -30,19 +30,19 @@ Route::middleware([App\Http\Middleware\SetLocale::class])->group(function () {
     Route::post('/otp/verify', [AuthController::class, 'verifyOtp'])
         ->middleware('throttle:5,1')
         ->name('otp.verify');
-	
-	
 
-Route::get('/register', [RegisterController::class, 'show'])->name('register.show');
-Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
-	
-	Route::get('/signup', [RegisterController::class,'showSignUp'])->name('signup');
-Route::post('/signup', [RegisterController::class,'submitSignUp'])->name('signup.submit');
-Route::post('/signup/verify', [RegisterController::class,'verifyOtpAndCreate'])->name('signup.verify');
+    Route::get('/register', [RegisterController::class, 'show'])->name('register.show');
+    Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+
+    Route::get('/signup', [RegisterController::class, 'showSignUp'])->name('signup');
+    Route::post('/signup', [RegisterController::class, 'submitSignUp'])->name('signup.submit');
+    Route::post('/signup/verify', [RegisterController::class, 'verifyOtpAndCreate'])->name('signup.verify');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-	
-	
+
+    Route::get('/privacy', [PublicPagesController::class, 'privacy'])->name('privacy');
+    Route::get('/terms', [PublicPagesController::class, 'terms'])->name('terms');
+    Route::get('/contact', [PublicPagesController::class, 'contact'])->name('contact');
 });
 
 // مناطق التطبيق المحمية
@@ -94,11 +94,13 @@ Route::middleware([
     });
 });
 
-// لوحة السوبر أدمن (إن لزم لاحقًا أضف middleware مناسب)
-Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
-Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
-Route::get('/admin/agent-releases/create', [AgentReleasesController::class, 'create'])->name('admin.agent-releases.create');
-Route::post('/admin/agent-releases', [AgentReleasesController::class, 'store'])->name('admin.agent-releases.store');
+// لوحة السوبر أدمن (التحقق من super_admin داخل الـ Controller)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+    Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
+    Route::get('/admin/agent-releases/create', [AgentReleasesController::class, 'create'])->name('admin.agent-releases.create');
+    Route::post('/admin/agent-releases', [AgentReleasesController::class, 'store'])->name('admin.agent-releases.store');
+});
 
 // Webhook Stripe
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])->name('stripe.webhook');
